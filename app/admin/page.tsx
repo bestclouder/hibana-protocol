@@ -2,7 +2,8 @@ import Link from "next/link";
 import { getClusters, getLessons, getSparks, getTickets } from "@/lib/data";
 import { createClient } from "@/lib/supabase/server";
 import { timeAgo } from "@/lib/format";
-import { ClusterTag, StatusBadge, TicketTag } from "@/components/badges";
+import { ClusterTag, StatusBadge, TicketTag, SparkMark } from "@/components/badges";
+import { FeatureToggle } from "@/components/feature-toggle";
 
 export const dynamic = "force-dynamic";
 
@@ -124,6 +125,29 @@ export default async function AdminDashboard() {
           )}
         </section>
       </div>
+
+      <section className="space-y-3">
+        <h2 className="font-display text-lg font-semibold">
+          <SparkMark /> Sparks — feature the best wins
+        </h2>
+        {sparks.length === 0 ? (
+          <p className="text-sm text-stone">No sparks shared yet.</p>
+        ) : (
+          <ul className="space-y-2">
+            {sparks.slice(0, 8).map((s) => (
+              <li key={s.id} className="bg-card border border-sand rounded-lg px-4 py-3 flex items-center gap-3">
+                <Link href={`/sparks/${s.id}`} className="flex-1 text-sm font-medium hover:text-ember-deep truncate">
+                  {s.title}
+                </Link>
+                <span className="text-xs text-stone whitespace-nowrap hidden sm:inline">
+                  {s.author_name}
+                </span>
+                <FeatureToggle sparkId={s.id} featured={s.featured} />
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       <section className="space-y-3">
         <h2 className="font-display text-lg font-semibold">Activity by lesson</h2>
