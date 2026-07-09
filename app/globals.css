@@ -1,1 +1,63 @@
 @import "tailwindcss";
+
+@theme {
+  --color-ink: #211b15;
+  --color-paper: #faf9f7;
+  --color-card: #ffffff;
+  --color-sand: #eae5de;
+  --color-stone: #6e655c;
+
+  --color-ember: #e4572e;
+  --color-ember-deep: #b93e1c;
+  --color-ember-wash: #fdefe9;
+
+  --color-dusk: #4a5490;
+  --color-dusk-deep: #363e6d;
+  --color-dusk-wash: #eef0f8;
+
+  --color-moss: #2f7a52;
+  --color-moss-wash: #e9f4ee;
+
+  --color-gold: #a97511;
+  --color-gold-wash: #faf3e3;
+
+  --font-display: var(--font-fraunces), "Georgia", serif;
+  --font-sans: var(--font-public-sans), system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+/* Signature element: stamped ticket / cluster tag with a notched corner */
+.tag-chip {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  padding: 0.2rem 0.6rem 0.2rem 0.55rem;
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.tag-chip::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 9999px;
+  background: currentColor;
+  opacity: 0.55;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
