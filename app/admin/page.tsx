@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { timeAgo } from "@/lib/format";
 import { ClusterTag, StatusBadge, TicketTag, SparkMark } from "@/components/badges";
 import { FeatureToggle } from "@/components/feature-toggle";
+import { DeleteContentButton } from "@/components/moderation-controls";
 
 export const dynamic = "force-dynamic";
 
@@ -43,6 +44,21 @@ export default async function AdminDashboard() {
 
   return (
     <main className="space-y-8">
+      <div className="flex flex-wrap gap-2">
+        <Link
+          href="/submit/spark"
+          className="rounded-md bg-ember text-white px-3.5 py-1.5 text-sm font-semibold hover:bg-ember-deep transition-colors"
+        >
+          + New Spark
+        </Link>
+        <Link
+          href="/submit/struggle"
+          className="rounded-md bg-dusk text-white px-3.5 py-1.5 text-sm font-semibold hover:bg-dusk-deep transition-colors"
+        >
+          + New Struggle
+        </Link>
+      </div>
+
       <section className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {stats.map((s) => (
           <div key={s.label} className="bg-card border border-sand rounded-lg p-4">
@@ -143,6 +159,7 @@ export default async function AdminDashboard() {
                   {s.author_name}
                 </span>
                 <FeatureToggle sparkId={s.id} featured={s.featured} />
+                <DeleteContentButton type="spark_post" id={s.id} label={s.title} />
               </li>
             ))}
           </ul>

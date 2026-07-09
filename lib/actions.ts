@@ -74,13 +74,20 @@ export async function createSpark(formData: FormData): Promise<ActionResult<{ id
     const identity = await getIdentity();
     const title = required(formData.get("title"), "Title");
     // Signed-in users post as themselves; the session identity wins over
-    // whatever the form says. Anonymous posting stays allowed.
-    const authorName = identity.user
-      ? identity.name!
-      : required(formData.get("author_name"), "Your name");
-    const authorEmail = identity.user
-      ? identity.email
-      : optional(formData.get("author_email"));
+    // whatever the form says. Anonymous posting stays allowed. The organiser
+    // is the one exception: they may attribute a post to someone else
+    // (e.g. reposting a win a student shared in chat).
+    const authorName =
+      identity.isAdmin && optional(formData.get("author_name"))
+        ? optional(formData.get("author_name"))!
+        : identity.user
+          ? identity.name!
+          : required(formData.get("author_name"), "Your name");
+    const authorEmail = identity.isAdmin
+      ? optional(formData.get("author_email"))
+      : identity.user
+        ? identity.email
+        : optional(formData.get("author_email"));
     const upload = await tryUploadImage(supabase, formData.get("image"));
 
     const { data, error } = await supabase
@@ -123,12 +130,17 @@ export async function createStruggle(
     const supabase = await createClient();
     const identity = await getIdentity();
     const title = required(formData.get("title"), "Title");
-    const authorName = identity.user
-      ? identity.name!
-      : required(formData.get("author_name"), "Your name");
-    const authorEmail = identity.user
-      ? identity.email
-      : optional(formData.get("author_email"));
+    const authorName =
+      identity.isAdmin && optional(formData.get("author_name"))
+        ? optional(formData.get("author_name"))!
+        : identity.user
+          ? identity.name!
+          : required(formData.get("author_name"), "Your name");
+    const authorEmail = identity.isAdmin
+      ? optional(formData.get("author_email"))
+      : identity.user
+        ? identity.email
+        : optional(formData.get("author_email"));
     const upload = await tryUploadImage(supabase, formData.get("image"));
 
     // count+1 numbering per docs/INTELLIGENCE_LAYER.md; retry on the unique

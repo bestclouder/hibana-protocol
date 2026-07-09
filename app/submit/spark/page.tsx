@@ -19,7 +19,7 @@ export default async function SubmitSparkPage() {
           Pulled something off? Post it — your win is someone else&apos;s map out of the same maze.
         </p>
       </div>
-      <SubmitForm kind="spark" lessons={lessons} identityName={identity.name} action={createSpark} />
+      <SubmitForm kind="spark" lessons={lessons} identityName={identity.name} isAdmin={identity.isAdmin} identityEmail={identity.email} action={createSpark} />
     </main>
   );
 }

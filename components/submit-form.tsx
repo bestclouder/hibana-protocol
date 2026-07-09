@@ -35,12 +35,17 @@ export function SubmitForm({
   lessons,
   action,
   identityName,
+  isAdmin = false,
+  identityEmail,
 }: {
   kind: "spark" | "struggle";
   lessons: Lesson[];
   action: (formData: FormData) => Promise<ActionResult<{ id: string; ticketNumber?: string }>>;
   /** Signed-in display name; hides name/email fields and posts as this user. */
   identityName?: string | null;
+  /** Organiser mode: author fields stay visible and editable (attribution). */
+  isAdmin?: boolean;
+  identityEmail?: string | null;
 }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
@@ -56,7 +61,7 @@ export function SubmitForm({
       setValidationError("Title is required.");
       return;
     }
-    if (!identityName && !String(formData.get("author_name") ?? "").trim()) {
+    if (!identityName && !isAdmin && !String(formData.get("author_name") ?? "").trim()) {
       setValidationError("Your name is required.");
       return;
     }
@@ -130,7 +135,24 @@ export function SubmitForm({
           </Field>
         )}
       </div>
-      {identityName ? (
+      {isAdmin ? (
+        <div className="space-y-2">
+          <p className="font-mono text-[0.6rem] uppercase tracking-[0.18em] text-gold">
+            Organiser: attribute this post
+          </p>
+          <div className="grid sm:grid-cols-2 gap-5">
+            <Field label="Author name" hint="Yours by default — change it to post on a student's behalf.">
+              <input name="author_name" defaultValue={identityName ?? ""} className={inputClasses} maxLength={100} />
+            </Field>
+            <Field
+              label="Author email (optional)"
+              hint={kind === "struggle" ? "Solution notifications go to this address." : undefined}
+            >
+              <input name="author_email" type="email" defaultValue={identityEmail ?? ""} className={inputClasses} />
+            </Field>
+          </div>
+        </div>
+      ) : identityName ? (
         <p className="text-sm text-stone">
           Posting as <span className="font-medium text-ink">{identityName}</span>
           {kind === "struggle" && " — we'll email you when a solution is posted for your ticket."}

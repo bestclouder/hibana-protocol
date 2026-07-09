@@ -3,6 +3,7 @@ import { getLessons, getReactionCounts, getTickets } from "@/lib/data";
 import { timeAgo } from "@/lib/format";
 import { STATUS_LABELS, type TicketStatus } from "@/lib/types";
 import { StatusBadge, TicketTag } from "@/components/badges";
+import { DeleteContentButton } from "@/components/moderation-controls";
 
 export const dynamic = "force-dynamic";
 
@@ -91,6 +92,7 @@ export default async function AdminTicketsPage({
                   🙋
                 </th>
                 <th className="py-2.5 px-4 font-medium">Reported</th>
+                <th className="py-2.5 px-4 font-medium sr-only">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -114,6 +116,9 @@ export default async function AdminTicketsPage({
                   <td className="py-2.5 px-4 font-mono text-xs">{meToo(t.id) || "—"}</td>
                   <td className="py-2.5 px-4 text-xs text-stone whitespace-nowrap">
                     {timeAgo(t.created_at)}
+                  </td>
+                  <td className="py-2.5 px-4">
+                    <DeleteContentButton type="struggle_ticket" id={t.id} label={t.title} />
                   </td>
                 </tr>
               ))}

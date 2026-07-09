@@ -19,7 +19,7 @@ export default async function SubmitStrugglePage() {
           be notified by email.
         </p>
       </div>
-      <SubmitForm kind="struggle" lessons={lessons} identityName={identity.name} action={createStruggle} />
+      <SubmitForm kind="struggle" lessons={lessons} identityName={identity.name} isAdmin={identity.isAdmin} identityEmail={identity.email} action={createStruggle} />
     </main>
   );
 }

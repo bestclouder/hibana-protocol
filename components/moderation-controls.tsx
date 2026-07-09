@@ -127,6 +127,40 @@ export function ModerationBar({
   );
 }
 
+/** Compact inline delete for admin lists (tickets table, sparks list). */
+export function DeleteContentButton({
+  type,
+  id,
+  label,
+}: {
+  type: ModerationTarget;
+  id: string;
+  label: string;
+}) {
+  const router = useRouter();
+  const [pending, setPending] = useState(false);
+
+  async function handle() {
+    if (!window.confirm(`Delete "${label}" for everyone? Its comments and reactions go with it. A snapshot stays in the audit log.`)) return;
+    setPending(true);
+    const res = await deleteContent({ type, id });
+    setPending(false);
+    if (res.ok) router.refresh();
+    else window.alert(res.message);
+  }
+
+  return (
+    <button
+      onClick={handle}
+      disabled={pending}
+      title="Organiser: delete"
+      className="rounded-md border border-red-200 text-red-700 px-2.5 py-1 text-xs font-semibold hover:bg-red-50 disabled:opacity-60"
+    >
+      {pending ? "…" : "Delete"}
+    </button>
+  );
+}
+
 export function DeleteCommentButton({ commentId }: { commentId: string }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);

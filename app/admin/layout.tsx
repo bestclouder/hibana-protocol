@@ -22,6 +22,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <Link href="/admin/clusters" className="px-3 py-1.5 rounded-md text-stone hover:text-ink hover:bg-sand/60 font-medium transition-colors">
             Common Pains
           </Link>
+          <Link href="/admin/lessons" className="px-3 py-1.5 rounded-md text-stone hover:text-ink hover:bg-sand/60 font-medium transition-colors">
+            Lessons
+          </Link>
         </nav>
       </div>
       {children}
