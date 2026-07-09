@@ -1,56 +1,75 @@
-import { createClient } from "@/lib/supabase/server";
-import { createCheckoutSession } from "@/lib/stripe";
 import { NextResponse } from "next/server";
+import { stripe, stripeAccountOptions, PLATFORM_FEE_PERCENT } from "@/lib/stripe";
+import { createClient } from "@/lib/supabase/server";
+import { writeAudit } from "@/lib/audit";
 
 /**
- * POST /api/stripe/checkout
- * Body: { priceId: string, successUrl?: string, cancelUrl?: string }
- *
- * Creates a Stripe Checkout Session for the authenticated user.
- * Respects Connect platform fee if STRIPE_PLATFORM_FEE_PERCENT is set.
+ * POST /api/stripe/checkout — approved tool create_stripe_checkout_session
+ * (docs/AGENTIC_LAYER.md). Creates a Checkout Session for the AOAI Pilot
+ * Plan. Secret key stays server-side; every call writes an audit row.
+ * v1 is demo-first (no login), so no auth requirement yet.
  */
 export async function POST(request: Request) {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    return NextResponse.json(
+      {
+        error:
+          "Payments aren't configured yet (STRIPE_SECRET_KEY missing). Add it in Vercel env vars to enable checkout.",
+      },
+      { status: 503 },
+    );
+  }
+
   try {
+    const origin =
+      request.headers.get("origin") ?? process.env.NEXT_PUBLIC_APP_URL ?? "";
+
+    const priceId = process.env.STRIPE_PRICE_ID;
+    const session = await stripe.checkout.sessions.create(
+      {
+        mode: "payment",
+        line_items: [
+          priceId
+            ? { price: priceId, quantity: 1 }
+            : {
+                price_data: {
+                  currency: "usd",
+                  unit_amount: 49900,
+                  product_data: {
+                    name: "Hibana Protocol — AOAI Pilot",
+                    description:
+                      "Full pilot access: struggle tickets, common-pain clustering, solution notifications, analytics.",
+                  },
+                },
+                quantity: 1,
+              },
+        ],
+        success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${origin}/checkout/cancel`,
+        ...(PLATFORM_FEE_PERCENT > 0
+          ? {
+              payment_intent_data: {
+                application_fee_amount: Math.round(49900 * (PLATFORM_FEE_PERCENT / 100)),
+              },
+            }
+          : {}),
+      },
+      stripeAccountOptions(),
+    );
+
     const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const body = await request.json();
-    const { priceId, successUrl, cancelUrl } = body as {
-      priceId: string;
-      successUrl?: string;
-      cancelUrl?: string;
-    };
-
-    if (!priceId) {
-      return NextResponse.json({ error: "priceId is required" }, { status: 400 });
-    }
-
-    const origin = request.headers.get("origin") ?? process.env.NEXT_PUBLIC_APP_URL ?? "";
-
-    // Look up existing Stripe customer ID if stored
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("stripe_customer_id")
-      .eq("id", user.id)
-      .single();
-
-    const session = await createCheckoutSession({
-      priceId,
-      customerId: profile?.stripe_customer_id ?? undefined,
-      userId: user.id,
-      successUrl: successUrl ?? `${origin}/dashboard?checkout=success`,
-      cancelUrl: cancelUrl ?? `${origin}/dashboard?checkout=canceled`,
+    await writeAudit(supabase, {
+      action: "payment.checkout_session_created",
+      target_type: "stripe_checkout_session",
+      metadata: { session_id: session.id, plan: "aoai_pilot" },
     });
 
     return NextResponse.json({ url: session.url });
   } catch (err) {
     console.error("[stripe/checkout]", err);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Could not start checkout. Please try again." },
+      { status: 500 },
+    );
   }
 }
