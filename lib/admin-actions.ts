@@ -1,7 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { requireAdmin, NOT_ADMIN_MESSAGE } from "@/lib/auth";
 import { writeAudit } from "@/lib/audit";
 import { recomputeClusterStats, type ActionResult } from "@/lib/actions";
 import { PILOT_SPACE_ID } from "@/lib/types";
@@ -12,7 +13,8 @@ export async function createCluster(
   formData: FormData,
 ): Promise<ActionResult<{ id: string; clusterNumber: string }>> {
   try {
-    const supabase = await createClient();
+    if (!(await requireAdmin())) return { ok: false, message: NOT_ADMIN_MESSAGE };
+    const supabase = createAdminClient();
     const title = String(formData.get("title") ?? "").trim();
     if (!title) return { ok: false, message: "Title is required." };
 
@@ -70,9 +72,10 @@ export async function linkTicketsToCluster(input: {
   ticketIds: string[];
 }): Promise<ActionResult> {
   try {
+    if (!(await requireAdmin())) return { ok: false, message: NOT_ADMIN_MESSAGE };
     if (input.ticketIds.length === 0)
       return { ok: false, message: "Select at least one ticket to link." };
-    const supabase = await createClient();
+    const supabase = createAdminClient();
 
     const { data: cluster } = await supabase
       .from("common_pain_clusters")
@@ -117,7 +120,8 @@ export async function linkTicketsToCluster(input: {
 
 export async function unlinkTicket(input: { ticketId: string; clusterId: string }): Promise<ActionResult> {
   try {
-    const supabase = await createClient();
+    if (!(await requireAdmin())) return { ok: false, message: NOT_ADMIN_MESSAGE };
+    const supabase = createAdminClient();
     const { error } = await supabase
       .from("struggle_tickets")
       .update({ cluster_id: null, status: "open", last_updated_at: new Date().toISOString() })
@@ -145,7 +149,8 @@ export async function unlinkTicket(input: { ticketId: string; clusterId: string 
 
 export async function toggleFeatured(input: { sparkId: string; featured: boolean }): Promise<ActionResult> {
   try {
-    const supabase = await createClient();
+    if (!(await requireAdmin())) return { ok: false, message: NOT_ADMIN_MESSAGE };
+    const supabase = createAdminClient();
     const { error } = await supabase
       .from("spark_posts")
       .update({ featured: input.featured })

@@ -1,6 +1,15 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+function isAdminEmail(email: string | null | undefined): boolean {
+  if (!email) return false;
+  const admins = (process.env.ADMIN_EMAILS ?? "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+  return admins.includes(email.toLowerCase());
+}
+
 export async function updateSession(request: NextRequest) {
   const supabaseResponse = NextResponse.next({ request });
 
@@ -22,7 +31,7 @@ export async function updateSession(request: NextRequest) {
         getAll() {
           return request.cookies.getAll();
         },
-        setAll(cookiesToSet) {
+        setAll(cookiesToSet: { name: string; value: string; options?: object }[]) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value),
           );
@@ -35,7 +44,24 @@ export async function updateSession(request: NextRequest) {
     });
 
     // Refresh session so it doesn't expire while user is active
-    await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    // Organiser console is admin-only (docs/SECURITY.md): everyone else is
+    // sent to the feed. ADMIN_EMAILS is the sole-organiser allowlist.
+    if (request.nextUrl.pathname.startsWith("/admin")) {
+      if (!user || !isAdminEmail(user.email)) {
+        const redirectUrl = request.nextUrl.clone();
+        redirectUrl.pathname = user ? "/feed" : "/auth/login";
+        redirectUrl.search = "";
+        const redirect = NextResponse.redirect(redirectUrl);
+        // Preserve refreshed auth cookies on the redirect
+        response.cookies.getAll().forEach((c) => redirect.cookies.set(c));
+        return redirect;
+      }
+    }
+
     return response;
   } catch {
     // Never let an auth hiccup crash the entire edge middleware

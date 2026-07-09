@@ -115,6 +115,18 @@ export interface LessonReflection {
   created_at: string;
 }
 
+export interface Thread {
+  id: string;
+  user_id: string | null;
+  space_id: string;
+  lesson_id: string | null;
+  title: string;
+  body: string | null;
+  pinned: boolean;
+  locked: boolean;
+  created_at: string;
+}
+
 export interface EmailNotification {
   id: string;
   cluster_id: string | null;

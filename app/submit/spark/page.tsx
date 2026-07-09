@@ -1,4 +1,5 @@
 import { createSpark } from "@/lib/actions";
+import { getIdentity } from "@/lib/auth";
 import { getLessons } from "@/lib/data";
 import { SubmitForm } from "@/components/submit-form";
 import { SparkMark } from "@/components/badges";
@@ -6,7 +7,7 @@ import { SparkMark } from "@/components/badges";
 export const dynamic = "force-dynamic";
 
 export default async function SubmitSparkPage() {
-  const lessons = await getLessons();
+  const [lessons, identity] = await Promise.all([getLessons(), getIdentity()]);
   return (
     <main className="max-w-2xl mx-auto px-4 sm:px-6 py-10">
       <div className="mb-8">
@@ -18,7 +19,7 @@ export default async function SubmitSparkPage() {
           Pulled something off? Post it — your win is someone else&apos;s map out of the same maze.
         </p>
       </div>
-      <SubmitForm kind="spark" lessons={lessons} action={createSpark} />
+      <SubmitForm kind="spark" lessons={lessons} identityName={identity.name} action={createSpark} />
     </main>
   );
 }

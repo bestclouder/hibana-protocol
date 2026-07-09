@@ -1,7 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { requireAdmin, NOT_ADMIN_MESSAGE } from "@/lib/auth";
 import { writeAudit } from "@/lib/audit";
 import { sendEmail, solutionEmailHtml } from "@/lib/email";
 import type { ActionResult } from "@/lib/actions";
@@ -12,7 +13,8 @@ import type { ActionResult } from "@/lib/actions";
  */
 export async function postSolution(formData: FormData): Promise<ActionResult> {
   try {
-    const supabase = await createClient();
+    if (!(await requireAdmin())) return { ok: false, message: NOT_ADMIN_MESSAGE };
+    const supabase = createAdminClient();
     const clusterId = String(formData.get("cluster_id") ?? "");
     const solutionBody = String(formData.get("solution_body") ?? "").trim();
     const solutionUrl = String(formData.get("solution_url") ?? "").trim() || null;
@@ -68,7 +70,8 @@ export async function sendSolutionEmails(input: {
   clusterId: string;
 }): Promise<ActionResult<{ sent: number; failed: number }>> {
   try {
-    const supabase = await createClient();
+    if (!(await requireAdmin())) return { ok: false, message: NOT_ADMIN_MESSAGE };
+    const supabase = createAdminClient();
     const { data: cluster } = await supabase
       .from("common_pain_clusters")
       .select("*")

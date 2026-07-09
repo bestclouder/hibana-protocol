@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { getIdentity } from "@/lib/auth";
 import { writeAudit } from "@/lib/audit";
 import { PILOT_SPACE_ID, type ReactionType, type TargetType } from "@/lib/types";
 
@@ -69,8 +71,16 @@ async function nextNumber(
 export async function createSpark(formData: FormData): Promise<ActionResult<{ id: string }>> {
   try {
     const supabase = await createClient();
+    const identity = await getIdentity();
     const title = required(formData.get("title"), "Title");
-    const authorName = required(formData.get("author_name"), "Your name");
+    // Signed-in users post as themselves; the session identity wins over
+    // whatever the form says. Anonymous posting stays allowed.
+    const authorName = identity.user
+      ? identity.name!
+      : required(formData.get("author_name"), "Your name");
+    const authorEmail = identity.user
+      ? identity.email
+      : optional(formData.get("author_email"));
     const upload = await tryUploadImage(supabase, formData.get("image"));
 
     const { data, error } = await supabase
@@ -78,8 +88,9 @@ export async function createSpark(formData: FormData): Promise<ActionResult<{ id
       .insert({
         space_id: PILOT_SPACE_ID,
         lesson_id: optional(formData.get("lesson_id")),
+        user_id: identity.user?.id ?? null,
         author_name: authorName,
-        author_email: optional(formData.get("author_email")),
+        author_email: authorEmail,
         title,
         description: optional(formData.get("description")),
         image_url: upload.url ?? optional(formData.get("image_url")),
@@ -93,7 +104,7 @@ export async function createSpark(formData: FormData): Promise<ActionResult<{ id
       action: "spark.created",
       target_type: "spark_post",
       target_id: data.id,
-      actor_email: optional(formData.get("author_email")),
+      actor_email: authorEmail,
       metadata: { title },
     });
 
@@ -110,8 +121,14 @@ export async function createStruggle(
 ): Promise<ActionResult<{ id: string; ticketNumber: string }>> {
   try {
     const supabase = await createClient();
+    const identity = await getIdentity();
     const title = required(formData.get("title"), "Title");
-    const authorName = required(formData.get("author_name"), "Your name");
+    const authorName = identity.user
+      ? identity.name!
+      : required(formData.get("author_name"), "Your name");
+    const authorEmail = identity.user
+      ? identity.email
+      : optional(formData.get("author_email"));
     const upload = await tryUploadImage(supabase, formData.get("image"));
 
     // count+1 numbering per docs/INTELLIGENCE_LAYER.md; retry on the unique
@@ -124,9 +141,10 @@ export async function createStruggle(
         .insert({
           space_id: PILOT_SPACE_ID,
           lesson_id: optional(formData.get("lesson_id")),
+          user_id: identity.user?.id ?? null,
           ticket_number: ticketNumber,
           author_name: authorName,
-          author_email: optional(formData.get("author_email")),
+          author_email: authorEmail,
           title,
           description: optional(formData.get("description")),
           image_url: upload.url ?? optional(formData.get("image_url")),
@@ -146,7 +164,7 @@ export async function createStruggle(
       action: "ticket.created",
       target_type: "struggle_ticket",
       target_id: inserted.id,
-      actor_email: optional(formData.get("author_email")),
+      actor_email: authorEmail,
       metadata: { title, ticket_number: ticketNumber, lesson_id: optional(formData.get("lesson_id")) },
     });
 
@@ -170,11 +188,14 @@ export async function addReaction(input: {
 }): Promise<ActionResult> {
   try {
     const supabase = await createClient();
+    const identity = await getIdentity();
     const { error } = await supabase.from("reactions").insert({
       target_id: input.targetId,
       target_type: input.targetType,
       reaction_type: input.reactionType,
-      reactor_name: input.reactorName || "Anonymous student",
+      user_id: identity.user?.id ?? null,
+      reactor_name: identity.name ?? input.reactorName ?? "Anonymous student",
+      reactor_email: identity.email,
     });
     if (error) throw new Error(error.message);
 
@@ -206,16 +227,32 @@ export async function addReaction(input: {
 export async function addComment(formData: FormData): Promise<ActionResult> {
   try {
     const supabase = await createClient();
+    const identity = await getIdentity();
     const body = required(formData.get("body"), "Comment");
-    const authorName = required(formData.get("author_name"), "Your name");
+    const authorName = identity.user
+      ? identity.name!
+      : required(formData.get("author_name"), "Your name");
     const targetId = required(formData.get("target_id"), "Target");
     const targetType = required(formData.get("target_type"), "Target type");
+
+    // Locked threads take no new replies
+    if (targetType === "thread") {
+      const { data: thread } = await supabase
+        .from("threads")
+        .select("locked")
+        .eq("id", targetId)
+        .single();
+      if (thread?.locked) {
+        return { ok: false, message: "This thread is locked — no new replies." };
+      }
+    }
 
     const { error } = await supabase.from("comments").insert({
       target_id: targetId,
       target_type: targetType,
+      user_id: identity.user?.id ?? null,
       author_name: authorName,
-      author_email: optional(formData.get("author_email")),
+      author_email: identity.user ? identity.email : optional(formData.get("author_email")),
       body,
     });
     if (error) throw new Error(error.message);
@@ -224,11 +261,12 @@ export async function addComment(formData: FormData): Promise<ActionResult> {
       action: "comment.created",
       target_type: targetType,
       target_id: targetId,
-      actor_email: optional(formData.get("author_email")),
+      actor_email: identity.email ?? optional(formData.get("author_email")),
     });
 
     revalidatePath(`/tickets/${targetId}`);
     revalidatePath(`/sparks/${targetId}`);
+    revalidatePath(`/threads/${targetId}`);
     return { ok: true, message: "Comment posted" };
   } catch (err) {
     return failure(err, "Could not post your comment. Please try again.");
@@ -238,7 +276,7 @@ export async function addComment(formData: FormData): Promise<ActionResult> {
 // ─── Shared: cluster stats (docs/INTELLIGENCE_LAYER.md) ───────────────────────
 
 export async function recomputeClusterStats(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: Pick<Awaited<ReturnType<typeof createClient>>, "from">,
   clusterId: string,
 ) {
   const { data: tickets } = await supabase
@@ -256,7 +294,9 @@ export async function recomputeClusterStats(
     reactionCount = count ?? 0;
   }
   const resolved = linked.filter((t) => t.resolution_status === "solved").length;
-  await supabase
+  // Cluster writes are service-role-only after the 0002 lockdown, and this
+  // recompute also runs inside student actions (reactions, resolutions)
+  await createAdminClient()
     .from("common_pain_clusters")
     .update({
       affected_student_count: linked.length + reactionCount,

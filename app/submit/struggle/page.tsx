@@ -1,11 +1,12 @@
 import { createStruggle } from "@/lib/actions";
+import { getIdentity } from "@/lib/auth";
 import { getLessons } from "@/lib/data";
 import { SubmitForm } from "@/components/submit-form";
 
 export const dynamic = "force-dynamic";
 
 export default async function SubmitStrugglePage() {
-  const lessons = await getLessons();
+  const [lessons, identity] = await Promise.all([getLessons(), getIdentity()]);
   return (
     <main className="max-w-2xl mx-auto px-4 sm:px-6 py-10">
       <div className="mb-8">
@@ -18,7 +19,7 @@ export default async function SubmitStrugglePage() {
           be notified by email.
         </p>
       </div>
-      <SubmitForm kind="struggle" lessons={lessons} action={createStruggle} />
+      <SubmitForm kind="struggle" lessons={lessons} identityName={identity.name} action={createStruggle} />
     </main>
   );
 }

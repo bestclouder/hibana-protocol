@@ -9,6 +9,7 @@ import {
   type Reaction,
   type SparkPost,
   type StruggleTicket,
+  type Thread,
 } from "@/lib/types";
 
 export async function getSpace(): Promise<CourseSpace | null> {
@@ -145,6 +146,39 @@ export async function getComments(targetId: string): Promise<Comment[]> {
     .eq("target_id", targetId)
     .order("created_at");
   return data ?? [];
+}
+
+/**
+ * Threads list; returns null (not an error page) while the threads table
+ * hasn't been created in the database yet.
+ */
+export async function getThreads(): Promise<Thread[] | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("threads")
+    .select("*")
+    .eq("space_id", PILOT_SPACE_ID)
+    .order("pinned", { ascending: false })
+    .order("created_at", { ascending: false });
+  if (error) {
+    // Table not created yet: PGRST205 / "Could not find the table" (schema
+    // cache) or 42P01 / "does not exist" (direct SQL)
+    if (
+      error.code === "PGRST205" ||
+      error.code === "42P01" ||
+      /does not exist|could not find the table/i.test(error.message)
+    ) {
+      return null;
+    }
+    throw new Error(`Could not load threads: ${error.message}`);
+  }
+  return data ?? [];
+}
+
+export async function getThread(id: string): Promise<Thread | null> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("threads").select("*").eq("id", id).single();
+  return data;
 }
 
 export async function getReflections(lessonId: string): Promise<LessonReflection[]> {

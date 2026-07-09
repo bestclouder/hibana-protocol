@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getCluster, getComments, getLesson, getReactionCounts, getTicket } from "@/lib/data";
+import { getIdentity } from "@/lib/auth";
+import { getCluster, getComments, getLesson, getLessons, getReactionCounts, getTicket } from "@/lib/data";
 import { fullDate, timeAgo } from "@/lib/format";
 import { STRUGGLE_REACTIONS } from "@/lib/types";
 import { StatusBadge, TicketTag, ClusterTag } from "@/components/badges";
 import { ReactionBar } from "@/components/reaction-bar";
 import { CommentSection } from "@/components/comment-section";
 import { SolutionPanel } from "@/components/solution-view";
+import { ModerationBar } from "@/components/moderation-controls";
 
 export const dynamic = "force-dynamic";
 
@@ -15,12 +17,14 @@ export default async function TicketPage({ params }: { params: Promise<{ id: str
   const ticket = await getTicket(id);
   if (!ticket) notFound();
 
-  const [lesson, cluster, comments, reactionCounts] = await Promise.all([
+  const [identity, lesson, cluster, comments, reactionCounts] = await Promise.all([
+    getIdentity(),
     ticket.lesson_id ? getLesson(ticket.lesson_id) : null,
     ticket.cluster_id ? getCluster(ticket.cluster_id) : null,
     getComments(ticket.id),
     getReactionCounts([ticket.id]),
   ]);
+  const allLessons = identity.isAdmin ? await getLessons() : [];
 
   return (
     <main className="max-w-3xl mx-auto px-4 sm:px-6 py-10 space-y-8">
@@ -71,6 +75,16 @@ export default async function TicketPage({ params }: { params: Promise<{ id: str
         </div>
       )}
 
+      {identity.isAdmin && (
+        <ModerationBar
+          type="struggle_ticket"
+          id={ticket.id}
+          lessons={allLessons}
+          currentLessonId={ticket.lesson_id}
+          redirectAfterDelete="/feed"
+        />
+      )}
+
       <SolutionPanel ticket={ticket} cluster={cluster} />
 
       <section className="space-y-2">
@@ -85,7 +99,13 @@ export default async function TicketPage({ params }: { params: Promise<{ id: str
         />
       </section>
 
-      <CommentSection targetId={ticket.id} targetType="struggle_ticket" comments={comments} />
+      <CommentSection
+        targetId={ticket.id}
+        targetType="struggle_ticket"
+        comments={comments}
+        identityName={identity.name}
+        isAdmin={identity.isAdmin}
+      />
 
       <p className="text-xs text-stone">Last updated {timeAgo(ticket.last_updated_at)}</p>
     </main>

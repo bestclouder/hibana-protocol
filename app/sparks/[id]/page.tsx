@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getComments, getLesson, getReactionCounts, getSpark } from "@/lib/data";
+import { getIdentity } from "@/lib/auth";
+import { getComments, getLesson, getLessons, getReactionCounts, getSpark } from "@/lib/data";
 import { fullDate } from "@/lib/format";
 import { SPARK_REACTIONS } from "@/lib/types";
 import { SparkMark } from "@/components/badges";
 import { ReactionBar } from "@/components/reaction-bar";
 import { CommentSection } from "@/components/comment-section";
+import { ModerationBar } from "@/components/moderation-controls";
 
 export const dynamic = "force-dynamic";
 
@@ -14,11 +16,13 @@ export default async function SparkPage({ params }: { params: Promise<{ id: stri
   const spark = await getSpark(id);
   if (!spark) notFound();
 
-  const [lesson, comments, reactionCounts] = await Promise.all([
+  const [identity, lesson, comments, reactionCounts] = await Promise.all([
+    getIdentity(),
     spark.lesson_id ? getLesson(spark.lesson_id) : null,
     getComments(spark.id),
     getReactionCounts([spark.id]),
   ]);
+  const allLessons = identity.isAdmin ? await getLessons() : [];
 
   return (
     <main className="max-w-3xl mx-auto px-4 sm:px-6 py-10 space-y-8">
@@ -55,6 +59,16 @@ export default async function SparkPage({ params }: { params: Promise<{ id: stri
           )}
         </p>
       </header>
+
+      {identity.isAdmin && (
+        <ModerationBar
+          type="spark_post"
+          id={spark.id}
+          lessons={allLessons}
+          currentLessonId={spark.lesson_id}
+          redirectAfterDelete="/feed"
+        />
+      )}
 
       {(spark.description || spark.image_url || spark.external_link) && (
         <div className="bg-card border border-sand rounded-lg p-5 space-y-4">
@@ -94,7 +108,13 @@ export default async function SparkPage({ params }: { params: Promise<{ id: stri
         />
       </section>
 
-      <CommentSection targetId={spark.id} targetType="spark_post" comments={comments} />
+      <CommentSection
+        targetId={spark.id}
+        targetType="spark_post"
+        comments={comments}
+        identityName={identity.name}
+        isAdmin={identity.isAdmin}
+      />
     </main>
   );
 }

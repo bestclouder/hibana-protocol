@@ -34,10 +34,13 @@ export function SubmitForm({
   kind,
   lessons,
   action,
+  identityName,
 }: {
   kind: "spark" | "struggle";
   lessons: Lesson[];
   action: (formData: FormData) => Promise<ActionResult<{ id: string; ticketNumber?: string }>>;
+  /** Signed-in display name; hides name/email fields and posts as this user. */
+  identityName?: string | null;
 }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
@@ -53,7 +56,7 @@ export function SubmitForm({
       setValidationError("Title is required.");
       return;
     }
-    if (!String(formData.get("author_name") ?? "").trim()) {
+    if (!identityName && !String(formData.get("author_name") ?? "").trim()) {
       setValidationError("Your name is required.");
       return;
     }
@@ -127,17 +130,24 @@ export function SubmitForm({
           </Field>
         )}
       </div>
-      <div className="grid sm:grid-cols-2 gap-5">
-        <Field label="Your name">
-          <input name="author_name" className={inputClasses} maxLength={100} />
-        </Field>
-        <Field
-          label="Your email (optional)"
-          hint={kind === "struggle" ? "We'll email you when a solution is posted for your ticket." : undefined}
-        >
-          <input name="author_email" type="email" className={inputClasses} />
-        </Field>
-      </div>
+      {identityName ? (
+        <p className="text-sm text-stone">
+          Posting as <span className="font-medium text-ink">{identityName}</span>
+          {kind === "struggle" && " — we'll email you when a solution is posted for your ticket."}
+        </p>
+      ) : (
+        <div className="grid sm:grid-cols-2 gap-5">
+          <Field label="Your name">
+            <input name="author_name" className={inputClasses} maxLength={100} />
+          </Field>
+          <Field
+            label="Your email (optional)"
+            hint={kind === "struggle" ? "We'll email you when a solution is posted for your ticket." : undefined}
+          >
+            <input name="author_email" type="email" className={inputClasses} />
+          </Field>
+        </div>
+      )}
 
       {validationError && (
         <p role="alert" className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-md px-3 py-2">

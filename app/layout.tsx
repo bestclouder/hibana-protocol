@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Fraunces, Public_Sans, IBM_Plex_Mono } from "next/font/google";
 import Link from "next/link";
+import { getIdentity } from "@/lib/auth";
+import { signOut } from "@/lib/auth-actions";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -25,17 +27,19 @@ export const metadata: Metadata = {
     "Where course students share wins, report struggles as tracked tickets, and get notified when solutions land.",
 };
 
-const NAV = [
-  { href: "/feed", label: "Feed" },
-  { href: "/admin", label: "Organiser" },
-  { href: "/pricing", label: "Pricing" },
-];
-
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const identity = await getIdentity();
+  const nav = [
+    { href: "/feed", label: "Feed" },
+    { href: "/threads", label: "Threads" },
+    ...(identity.isAdmin ? [{ href: "/admin", label: "Organiser" }] : []),
+    { href: "/pricing", label: "Pricing" },
+  ];
+
   return (
     <html lang="en" className={`${fraunces.variable} ${publicSans.variable} ${plexMono.variable}`}>
       <body className="antialiased min-h-screen flex flex-col">
@@ -51,7 +55,7 @@ export default function RootLayout({
               </span>
             </Link>
             <nav className="flex items-center gap-1 text-sm">
-              {NAV.map((item) => (
+              {nav.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
@@ -60,6 +64,29 @@ export default function RootLayout({
                   {item.label}
                 </Link>
               ))}
+              {identity.user ? (
+                <div className="flex items-center gap-2 pl-2 ml-1 border-l border-sand">
+                  <span className="hidden sm:inline text-xs text-stone max-w-36 truncate" title={identity.email ?? undefined}>
+                    {identity.isAdmin && <span aria-hidden className="text-ember mr-1">✦</span>}
+                    {identity.name}
+                  </span>
+                  <form action={signOut}>
+                    <button
+                      type="submit"
+                      className="px-3 py-1.5 rounded-md text-stone hover:text-ink hover:bg-sand/60 transition-colors font-medium"
+                    >
+                      Sign out
+                    </button>
+                  </form>
+                </div>
+              ) : (
+                <Link
+                  href="/auth/login"
+                  className="ml-1 px-3 py-1.5 rounded-md bg-ink text-paper font-medium hover:opacity-90 transition-opacity"
+                >
+                  Sign in
+                </Link>
+              )}
             </nav>
           </div>
         </header>
