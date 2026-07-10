@@ -57,6 +57,12 @@ export default async function AdminDashboard() {
         >
           + New Struggle
         </Link>
+        <Link
+          href="/threads"
+          className="rounded-md bg-ink text-paper px-3.5 py-1.5 text-sm font-semibold hover:opacity-90 transition-opacity"
+        >
+          + New Thread
+        </Link>
       </div>
 
       <section className="grid grid-cols-2 sm:grid-cols-5 gap-3">
