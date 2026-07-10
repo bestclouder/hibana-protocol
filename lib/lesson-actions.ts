@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin, NOT_ADMIN_MESSAGE } from "@/lib/auth";
+import { tryUploadImage } from "@/lib/upload";
 import { writeAudit } from "@/lib/audit";
 import { PILOT_SPACE_ID } from "@/lib/types";
 import type { ActionResult } from "@/lib/actions";
@@ -30,6 +31,7 @@ export async function createLesson(formData: FormData): Promise<ActionResult> {
       .limit(1)
       .single();
 
+    const upload = await tryUploadImage(formData.get("image"));
     const { data, error } = await supabase
       .from("lessons")
       .insert({
@@ -38,6 +40,7 @@ export async function createLesson(formData: FormData): Promise<ActionResult> {
         title,
         description: String(formData.get("description") ?? "").trim() || null,
         sort_order: (last?.sort_order ?? 0) + 1,
+        image_url: upload.url ?? (String(formData.get("image_url") ?? "").trim() || null),
       })
       .select("id")
       .single();
@@ -61,53 +64,67 @@ export async function createLesson(formData: FormData): Promise<ActionResult> {
     });
 
     revalidateLessonPages();
-    return { ok: true, message: "Lesson added." };
+    return { ok: true, message: `Lesson added.${upload.note ? ` (${upload.note})` : ""}` };
   } catch (err) {
     console.error("[lesson]", err);
     return { ok: false, message: "Could not add the lesson. Please try again." };
   }
 }
 
-export async function updateLesson(input: {
-  id: string;
-  title: string;
-  description: string;
-  sortOrder: number;
-}): Promise<ActionResult> {
+export async function updateLesson(formData: FormData): Promise<ActionResult> {
   try {
     const admin = await requireAdmin();
     if (!admin) return { ok: false, message: NOT_ADMIN_MESSAGE };
-    const title = input.title.trim();
+    const id = String(formData.get("lesson_id") ?? "");
+    const title = String(formData.get("title") ?? "").trim();
+    if (!id) return { ok: false, message: "Missing lesson reference." };
     if (!title) return { ok: false, message: "Title is required." };
+    const sortOrder = parseInt(String(formData.get("sort_order") ?? ""), 10);
 
     const supabase = createAdminClient();
+    const { data: current } = await supabase
+      .from("lessons")
+      .select("image_url")
+      .eq("id", id)
+      .single();
+
+    // Image precedence: new upload > pasted URL > keep current; the remove
+    // checkbox clears it (unless a replacement was provided)
+    const upload = await tryUploadImage(formData.get("image"));
+    const removeImage = formData.get("remove_image") === "on";
+    const imageUrl =
+      upload.url ??
+      (String(formData.get("image_url") ?? "").trim() || null) ??
+      (removeImage ? null : (current?.image_url ?? null));
+
     const { error } = await supabase
       .from("lessons")
       .update({
         title,
-        description: input.description.trim() || null,
-        sort_order: Number.isFinite(input.sortOrder) ? input.sortOrder : 0,
+        description: String(formData.get("description") ?? "").trim() || null,
+        sort_order: Number.isFinite(sortOrder) ? sortOrder : 0,
+        image_url: imageUrl,
       })
-      .eq("id", input.id);
+      .eq("id", id);
     if (error) throw new Error(error.message);
 
     // Keep the lesson's discussion thread title in sync
     await supabase
       .from("threads")
       .update({ title })
-      .eq("lesson_id", input.id)
+      .eq("lesson_id", id)
       .eq("kind", "lesson");
 
     await writeAudit(supabase, {
       action: "lesson.updated",
       target_type: "lesson",
-      target_id: input.id,
+      target_id: id,
       actor_email: admin.email,
       metadata: { title },
     });
 
-    revalidateLessonPages(input.id);
-    return { ok: true, message: "Lesson saved." };
+    revalidateLessonPages(id);
+    return { ok: true, message: `Lesson saved.${upload.note ? ` (${upload.note})` : ""}` };
   } catch (err) {
     console.error("[lesson]", err);
     return { ok: false, message: "Could not save the lesson. Please try again." };

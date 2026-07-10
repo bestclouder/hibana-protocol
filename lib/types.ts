@@ -31,6 +31,7 @@ export interface Lesson {
   space_id: string;
   title: string;
   description: string | null;
+  image_url: string | null;
   sort_order: number;
   parent_lesson_id: string | null;
   created_at: string;

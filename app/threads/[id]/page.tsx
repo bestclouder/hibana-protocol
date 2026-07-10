@@ -79,6 +79,15 @@ export default async function ThreadPage({ params }: { params: Promise<{ id: str
         </div>
       )}
 
+      {isLessonThread && lesson?.image_url && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={lesson.image_url}
+          alt={`Illustration for ${lesson.title}`}
+          className="rounded-lg border border-sand max-w-full"
+        />
+      )}
+
       {thread.body && (
         <div className="bg-card border border-sand rounded-lg p-5">
           <p className="text-sm leading-relaxed whitespace-pre-wrap">{thread.body}</p>

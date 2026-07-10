@@ -47,6 +47,14 @@ export default async function LessonPage({ params }: { params: Promise<{ id: str
         <p className="font-mono text-[0.65rem] uppercase tracking-[0.18em] text-stone">Lesson</p>
         <h1 className="font-display text-3xl font-semibold tracking-tight">{lesson.title}</h1>
         {lesson.description && <p className="text-stone text-sm max-w-2xl">{lesson.description}</p>}
+        {lesson.image_url && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={lesson.image_url}
+            alt={`Illustration for ${lesson.title}`}
+            className="rounded-lg border border-sand max-w-2xl w-full"
+          />
+        )}
         {lessonThread && (
           <Link
             href={`/threads/${lessonThread.id}`}

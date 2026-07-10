@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { createLesson, deleteLesson, updateLesson } from "@/lib/lesson-actions";
 import type { Lesson } from "@/lib/types";
 
@@ -23,15 +23,27 @@ function LessonRow({
   const [pending, setPending] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
+  const [removeImage, setRemoveImage] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   async function save() {
     setPending("save");
     setMessage(null);
-    const res = await updateLesson({ id: lesson.id, title, description, sortOrder });
+    const formData = new FormData();
+    formData.set("lesson_id", lesson.id);
+    formData.set("title", title);
+    formData.set("description", description);
+    formData.set("sort_order", String(sortOrder));
+    const fileInput = fileRef.current;
+    if (fileInput?.files?.[0]) formData.set("image", fileInput.files[0]);
+    if (removeImage) formData.set("remove_image", "on");
+    const res = await updateLesson(formData);
     setPending(null);
     setMessage({ ok: res.ok, text: res.message });
     if (res.ok) {
       setEditing(false);
+      setRemoveImage(false);
+      if (fileInput) fileInput.value = "";
       router.refresh();
     }
   }
@@ -74,6 +86,30 @@ function LessonRow({
               className={inputClasses}
             />
           </label>
+          <div className="space-y-1.5">
+            <span className="text-xs font-medium text-stone">Explainer image</span>
+            {lesson.image_url && (
+              <div className="flex items-center gap-3">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={lesson.image_url} alt="Current lesson image" className="h-14 rounded border border-sand" />
+                <label className="flex items-center gap-2 text-xs">
+                  <input
+                    type="checkbox"
+                    checked={removeImage}
+                    onChange={(e) => setRemoveImage(e.target.checked)}
+                    className="size-4 accent-ink"
+                  />
+                  Remove image
+                </label>
+              </div>
+            )}
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              className={`${inputClasses} file:mr-3 file:border-0 file:bg-sand file:rounded file:px-2 file:py-1 file:text-xs`}
+            />
+          </div>
           <div className="flex gap-2">
             <button
               onClick={save}
@@ -98,6 +134,10 @@ function LessonRow({
       ) : (
         <div className="flex items-start gap-3">
           <span className="font-mono text-xs text-stone mt-1 w-6">{lesson.sort_order}.</span>
+          {lesson.image_url && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={lesson.image_url} alt="" className="h-12 w-16 object-cover rounded border border-sand shrink-0" />
+          )}
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium">{lesson.title}</p>
             {lesson.description && (
@@ -217,6 +257,16 @@ export function LessonManager({
         <label className="block space-y-1.5">
           <span className="text-sm font-medium">Description</span>
           <textarea name="description" rows={3} className={inputClasses} />
+        </label>
+        <label className="block space-y-1.5">
+          <span className="text-sm font-medium">Explainer image (optional)</span>
+          <input
+            type="file"
+            name="image"
+            accept="image/*"
+            className={`${inputClasses} file:mr-3 file:border-0 file:bg-sand file:rounded file:px-2 file:py-1 file:text-xs`}
+          />
+          <span className="block text-xs text-stone">A screenshot or diagram that helps explain the lesson.</span>
         </label>
         {error && (
           <p role="alert" className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-md px-3 py-2">

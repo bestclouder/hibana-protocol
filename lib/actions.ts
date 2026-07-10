@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getIdentity } from "@/lib/auth";
+import { tryUploadImage } from "@/lib/upload";
 import { writeAudit } from "@/lib/audit";
 import {
   COMMENT_EMOJI,
@@ -29,35 +30,6 @@ class ValidationError extends Error {}
 function optional(value: FormDataEntryValue | null): string | null {
   const s = typeof value === "string" ? value.trim() : "";
   return s || null;
-}
-
-/**
- * Upload an attached image to the public "images" bucket. Runs on the
- * service-role client because storage writes are server-side only (clients
- * have no storage policies). Failure is non-fatal: the post is saved
- * without the image and the caller surfaces a note — never silent.
- */
-async function tryUploadImage(
-  _supabase: Awaited<ReturnType<typeof createClient>>,
-  file: FormDataEntryValue | null,
-): Promise<{ url: string | null; note: string | null }> {
-  if (!(file instanceof File) || file.size === 0) return { url: null, note: null };
-  if (file.size > 5 * 1024 * 1024) {
-    return { url: null, note: "Image skipped: larger than 5 MB." };
-  }
-  const storage = createAdminClient().storage;
-  const path = `${crypto.randomUUID()}-${file.name.replace(/[^\w.-]/g, "_")}`;
-  const { error } = await storage.from("images").upload(path, file, {
-    contentType: file.type || undefined,
-  });
-  if (error) {
-    return {
-      url: null,
-      note: "Image skipped: the upload failed. You can paste an image URL instead.",
-    };
-  }
-  const { data } = storage.from("images").getPublicUrl(path);
-  return { url: data.publicUrl, note: null };
 }
 
 /** Next sequential number for HIB-### / COMMON-### tags (count + 1, per docs). */
@@ -96,7 +68,7 @@ export async function createSpark(formData: FormData): Promise<ActionResult<{ id
       : identity.user
         ? identity.email
         : optional(formData.get("author_email"));
-    const upload = await tryUploadImage(supabase, formData.get("image"));
+    const upload = await tryUploadImage(formData.get("image"));
 
     const { data, error } = await supabase
       .from("spark_posts")
@@ -149,7 +121,7 @@ export async function createStruggle(
       : identity.user
         ? identity.email
         : optional(formData.get("author_email"));
-    const upload = await tryUploadImage(supabase, formData.get("image"));
+    const upload = await tryUploadImage(formData.get("image"));
 
     // count+1 numbering per docs/INTELLIGENCE_LAYER.md; retry on the unique
     // constraint in case two students submit at the same moment
@@ -240,7 +212,7 @@ export async function updateSparkPost(
 
     const title = required(formData.get("title"), "Title");
     const supabase = await createClient();
-    const upload = await tryUploadImage(supabase, formData.get("image"));
+    const upload = await tryUploadImage(formData.get("image"));
 
     // Image precedence: new upload > pasted URL > keep current; the remove
     // checkbox clears it (unless a replacement was provided)
