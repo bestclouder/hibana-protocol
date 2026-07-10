@@ -7,7 +7,7 @@ Online course students struggle alone: they don't know if others share their blo
 - **Students** (primary daily users): share wins (Sparks), report blockers (Struggles), follow their tickets, react to peers.
 - **Course organiser / admin** (paying customer): reviews tickets, clusters repeated problems, posts solutions, emails affected students, reads analytics.
 
-v1 is a single AOAI pilot space.
+v1 is a single pilot course space.
 
 ## Core Objects
 `CourseSpace` → `Lessons` → `SparkPosts` / `StruggleTickets` → `CommonPainClusters` → `EmailNotifications` → `Reactions` / `Comments` / `LessonReflections` / `AuditLogs`
@@ -24,7 +24,7 @@ v1 is a single AOAI pilot space.
 - [ ] Email sent to all students linked to that cluster (via Resend)
 - [ ] Student marks ticket Solved or Still Stuck
 - [ ] Basic analytics panel on admin dashboard
-- [ ] Checkout page for AOAI Pilot Plan (Stripe)
+- [ ] Checkout page for the Pilot Plan (Stripe)
 
 ## Non-Goals (v1)
 Multi-tenant SaaS, mobile app, LMS integrations, AI auto-clustering, gamification, DMs, video hosting, complex billing.

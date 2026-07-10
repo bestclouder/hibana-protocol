@@ -33,7 +33,7 @@ export default function PricingPage() {
           <div className="flex items-baseline justify-between flex-wrap gap-2">
             <div>
               <h2 className="font-display text-2xl font-semibold">
-                <SparkMark /> AOAI Pilot Plan
+                <SparkMark /> Pilot Plan
               </h2>
               <p className="text-sm text-stone mt-1">One cohort space, unlimited students.</p>
             </div>

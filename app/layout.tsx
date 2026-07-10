@@ -96,7 +96,7 @@ export default async function RootLayout({
             <p>
               Hibana Protocol — every struggle becomes a tracked ticket, every showcase lights the room.
             </p>
-            <p className="font-mono tracking-wider">AOAI PILOT</p>
+            <p className="font-mono tracking-wider">PILOT</p>
           </div>
         </footer>
       </body>

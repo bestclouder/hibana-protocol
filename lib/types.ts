@@ -145,7 +145,7 @@ export interface EmailNotification {
   created_at: string;
 }
 
-/** The single AOAI pilot space (seeded by 0001_init.sql). */
+/** The single pilot course space (seeded by 0001_init.sql). */
 export const PILOT_SPACE_ID = "a1b2c3d4-0000-0000-0000-000000000001";
 
 export const REACTION_LABELS: Record<ReactionType, string> = {

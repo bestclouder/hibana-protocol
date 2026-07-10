@@ -9,7 +9,7 @@
 - [ ] Loading skeleton, empty state ("Be the first to post!"), error state ("Could not load feed")
 - [ ] Deploy to Vercel; confirm feed loads with seed data
 
-**Definition of Done**: visiting `/feed` on the deployed URL shows AOAI seed Sparks and Struggles without logging in.
+**Definition of Done**: visiting `/feed` on the deployed URL shows the seed Sparks and Struggles without logging in.
 
 ---
 
@@ -59,7 +59,7 @@
 ## Sprint 5 — Checkout page
 **Goal**: Course creator can pay for access from day one.
 
-- [ ] `/pricing` page: plan name "Hibana Protocol — AOAI Pilot", price, feature list, Buy Now button
+- [ ] `/pricing` page: plan name "Hibana Protocol — Pilot Plan", price, feature list, Buy Now button
 - [ ] Next.js API route creates Stripe Checkout session (secret key server-side only)
 - [ ] Success page `/checkout/success` and cancel page `/checkout/cancel`
 - [ ] Stripe webhook handler verifies signature, logs to `audit_logs`

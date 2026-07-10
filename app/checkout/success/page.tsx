@@ -8,7 +8,7 @@ export default function CheckoutSuccessPage() {
         Welcome to the pilot
       </h1>
       <p className="text-stone">
-        Payment received — your AOAI Pilot space is live. Head to the organiser console to see
+        Payment received — your pilot space is live. Head to the organiser console to see
         where your cohort is stuck, or jump into the feed.
       </p>
       <div className="flex justify-center gap-3">

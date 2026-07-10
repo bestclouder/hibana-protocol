@@ -5,7 +5,7 @@ import { writeAudit } from "@/lib/audit";
 
 /**
  * POST /api/stripe/checkout — approved tool create_stripe_checkout_session
- * (docs/AGENTIC_LAYER.md). Creates a Checkout Session for the AOAI Pilot
+ * (docs/AGENTIC_LAYER.md). Creates a Checkout Session for the Pilot
  * Plan. Secret key stays server-side; every call writes an audit row.
  * v1 is demo-first (no login), so no auth requirement yet.
  */
@@ -36,7 +36,7 @@ export async function POST(request: Request) {
                   currency: "usd",
                   unit_amount: 49900,
                   product_data: {
-                    name: "Hibana Protocol — AOAI Pilot",
+                    name: "Hibana Protocol — Pilot Plan",
                     description:
                       "Full pilot access: struggle tickets, common-pain clustering, solution notifications, analytics.",
                   },
@@ -61,7 +61,7 @@ export async function POST(request: Request) {
     await writeAudit(supabase, {
       action: "payment.checkout_session_created",
       target_type: "stripe_checkout_session",
-      metadata: { session_id: session.id, plan: "aoai_pilot" },
+      metadata: { session_id: session.id, plan: "pilot" },
     });
 
     return NextResponse.json({ url: session.url });

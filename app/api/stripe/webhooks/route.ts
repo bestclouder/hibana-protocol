@@ -44,7 +44,7 @@ export async function POST(request: Request) {
             session_id: session.id,
             amount_total: session.amount_total,
             currency: session.currency,
-            plan: "aoai_pilot",
+            plan: "pilot",
           },
         });
         break;

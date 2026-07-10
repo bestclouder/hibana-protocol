@@ -181,7 +181,7 @@ drop policy if exists "audit_logs_v1_write" on audit_logs;
 create policy "audit_logs_v1_write" on audit_logs for all using (true) with check (true);
 
 insert into course_spaces (id, name, description, invite_code) values
-  ('a1b2c3d4-0000-0000-0000-000000000001', 'Academy of AI Student Community', 'The official AOAI student space for sharing wins, struggles, and learning together.', 'AOAI2024');
+  ('a1b2c3d4-0000-0000-0000-000000000001', 'The Course Community', 'The student space for sharing wins, struggles, and learning together.', 'PILOT2026');
 
 insert into lessons (id, space_id, title, description, sort_order) values
   ('b1000000-0000-0000-0000-000000000001', 'a1b2c3d4-0000-0000-0000-000000000001', 'Lesson 1: Intro to AI Tools', 'Overview of the AI landscape and the tools we will use throughout the course.', 1),

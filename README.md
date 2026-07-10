@@ -2,7 +2,7 @@
 
 A paid course-community tool where students post wins (**Sparks**) and report blockers as tracked tickets (**Struggles**, `HIB-###`), organisers group repeated problems into **Common Pain clusters** (`COMMON-###`) and post one solution, and every affected student gets an email — then marks their ticket **Solved** or **Still stuck**.
 
-Built from the committed plan in [`/docs`](docs/PRD.md). v1 is the single AOAI pilot space, demo-first: the homepage **is** the working app, no login wall.
+Built from the committed plan in [`/docs`](docs/PRD.md). v1 is a single pilot course space, demo-first: the homepage **is** the working app, no login wall.
 
 ## The core loop
 
