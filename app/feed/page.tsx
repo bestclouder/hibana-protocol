@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getLessons, getReactionCounts, getSparks, getTickets } from "@/lib/data";
+import { getLessons, getReactionCounts, getSpace, getSparks, getTickets } from "@/lib/data";
 import { createClient } from "@/lib/supabase/server";
 import { ShowcaseCard, TicketRow } from "@/components/cards";
 import { SparkMark } from "@/components/badges";
@@ -12,7 +12,8 @@ export default async function FeedPage({
   searchParams: Promise<{ lesson?: string }>;
 }) {
   const { lesson: lessonId } = await searchParams;
-  const [lessons, sparks, tickets] = await Promise.all([
+  const [space, lessons, sparks, tickets] = await Promise.all([
+    getSpace(),
     getLessons(),
     getSparks(lessonId),
     getTickets({ lessonId }),
@@ -46,12 +47,17 @@ export default async function FeedPage({
     <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
         <div>
+          {space && (
+            <p className="font-mono text-[0.7rem] uppercase tracking-[0.18em] text-gold mb-1.5">
+              {space.name}
+            </p>
+          )}
           <h1 className="font-display text-3xl font-semibold tracking-tight">
             The room where sparks fly
           </h1>
           <p className="text-stone mt-1 text-sm">
-            Show off what you&apos;ve built, or report a blocker — every struggle becomes a
-            tracked ticket.
+            {space?.description ??
+              "Show off what you've built, or report a blocker — every struggle becomes a tracked ticket."}
           </p>
         </div>
         <div className="flex gap-2">

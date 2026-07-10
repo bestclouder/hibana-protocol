@@ -1,21 +1,23 @@
 import Link from "next/link";
-import { getClusters, getLessons, getSparks, getTickets } from "@/lib/data";
+import { getClusters, getLessons, getSpace, getSparks, getTickets } from "@/lib/data";
 import { createClient } from "@/lib/supabase/server";
 import { timeAgo } from "@/lib/format";
 import { ClusterTag, StatusBadge, TicketTag, SparkMark } from "@/components/badges";
 import { FeatureToggle } from "@/components/feature-toggle";
 import { DeleteContentButton } from "@/components/moderation-controls";
 import { SuggestionQueue } from "@/components/suggestion-queue";
+import { SpaceSettings } from "@/components/space-settings";
 import { aiConfigured } from "@/lib/ai-suggest";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminDashboard() {
-  const [sparks, tickets, clusters, lessons] = await Promise.all([
+  const [sparks, tickets, clusters, lessons, space] = await Promise.all([
     getSparks(),
     getTickets(),
     getClusters(),
     getLessons(),
+    getSpace(),
   ]);
 
   const supabase = await createClient();
@@ -98,6 +100,8 @@ export default async function AdminDashboard() {
           </div>
         ))}
       </section>
+
+      {space && <SpaceSettings space={space} />}
 
       <SuggestionQueue
         suggestions={queuedSuggestions}
