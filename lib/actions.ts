@@ -212,6 +212,73 @@ export async function createStruggle(
   }
 }
 
+/**
+ * Owner (or organiser) edits a showcase post. Ownership = the signed-in
+ * user who created it; the write runs on the service-role client after
+ * this server-side check, since clients have no update rights post-lockdown.
+ */
+export async function updateSparkPost(
+  formData: FormData,
+): Promise<ActionResult<{ id: string }>> {
+  try {
+    const identity = await getIdentity();
+    const sparkId = String(formData.get("spark_id") ?? "");
+    if (!sparkId) return { ok: false, message: "Missing post reference." };
+
+    const admin = createAdminClient();
+    const { data: spark } = await admin
+      .from("spark_posts")
+      .select("id, user_id, title, image_url")
+      .eq("id", sparkId)
+      .single();
+    if (!spark) return { ok: false, message: "That post no longer exists." };
+
+    const isOwner = Boolean(identity.user && spark.user_id && identity.user.id === spark.user_id);
+    if (!isOwner && !identity.isAdmin) {
+      return { ok: false, message: "Only the author (signed in) or the organiser can edit this post." };
+    }
+
+    const title = required(formData.get("title"), "Title");
+    const supabase = await createClient();
+    const upload = await tryUploadImage(supabase, formData.get("image"));
+
+    // Image precedence: new upload > pasted URL > keep current; the remove
+    // checkbox clears it (unless a replacement was provided)
+    const removeImage = formData.get("remove_image") === "on";
+    const imageUrl =
+      upload.url ??
+      optional(formData.get("image_url")) ??
+      (removeImage ? null : spark.image_url);
+
+    const { error } = await admin
+      .from("spark_posts")
+      .update({
+        title,
+        description: optional(formData.get("description")),
+        external_link: optional(formData.get("external_link")),
+        lesson_id: optional(formData.get("lesson_id")),
+        image_url: imageUrl,
+      })
+      .eq("id", spark.id);
+    if (error) throw new Error(error.message);
+
+    await writeAudit(supabase, {
+      action: "spark.updated",
+      target_type: "spark_post",
+      target_id: spark.id,
+      actor_email: identity.email,
+      metadata: { title, edited_by: isOwner ? "owner" : "organiser" },
+    });
+
+    revalidatePath(`/sparks/${spark.id}`);
+    revalidatePath("/feed");
+    const note = upload.note ? ` (${upload.note})` : "";
+    return { ok: true, message: `Post updated.${note}`, data: { id: spark.id } };
+  } catch (err) {
+    return failure(err, "Could not save your changes. Please try again.");
+  }
+}
+
 export async function addReaction(input: {
   targetId: string;
   targetType: TargetType | "comment";

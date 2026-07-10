@@ -38,6 +38,7 @@ export interface Lesson {
 
 export interface SparkPost {
   id: string;
+  user_id: string | null;
   space_id: string;
   lesson_id: string | null;
   author_name: string;

@@ -8,6 +8,7 @@ import { SparkMark } from "@/components/badges";
 import { ReactionBar } from "@/components/reaction-bar";
 import { ChatSection } from "@/components/chat-section";
 import { ModerationBar } from "@/components/moderation-controls";
+import { ShowcaseContent } from "@/components/showcase-editor";
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +23,9 @@ export default async function SparkPage({ params }: { params: Promise<{ id: stri
     getComments(spark.id),
   ]);
   const reactionCounts = await getReactionCounts([spark.id, ...comments.map((c) => c.id)]);
-  const allLessons = identity.isAdmin ? await getLessons() : [];
+  const canEdit =
+    identity.isAdmin || Boolean(identity.user && spark.user_id && identity.user.id === spark.user_id);
+  const allLessons = canEdit ? await getLessons() : [];
 
   return (
     <main className="max-w-3xl mx-auto px-4 sm:px-6 py-10 space-y-8">
@@ -70,31 +73,7 @@ export default async function SparkPage({ params }: { params: Promise<{ id: stri
         />
       )}
 
-      {(spark.description || spark.image_url || spark.external_link) && (
-        <div className="bg-card border border-sand rounded-lg p-5 space-y-4">
-          {spark.description && (
-            <p className="text-sm leading-relaxed whitespace-pre-wrap">{spark.description}</p>
-          )}
-          {spark.image_url && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={spark.image_url}
-              alt="Attached image"
-              className="rounded-md border border-sand max-w-full"
-            />
-          )}
-          {spark.external_link && (
-            <a
-              href={spark.external_link}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block text-sm font-medium text-ember-deep underline"
-            >
-              Check it out →
-            </a>
-          )}
-        </div>
-      )}
+      <ShowcaseContent spark={spark} lessons={allLessons} canEdit={canEdit} />
 
       <section className="space-y-2">
         <h2 className="font-mono text-[0.65rem] uppercase tracking-[0.18em] text-stone">
