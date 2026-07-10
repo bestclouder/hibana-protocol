@@ -63,6 +63,11 @@ export interface StruggleTicket {
   status: TicketStatus;
   resolution_status: string | null;
   solution_url: string | null;
+  cluster_suggestion: string | null;
+  cluster_suggestion_source: string | null;
+  cluster_suggestion_confidence: number | null;
+  cluster_suggestion_reason: string | null;
+  cluster_suggestion_review_status: string;
   last_updated_at: string;
   created_at: string;
 }

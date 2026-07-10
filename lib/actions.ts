@@ -183,6 +183,15 @@ export async function createStruggle(
       metadata: { title, ticket_number: ticketNumber, lesson_id: optional(formData.get("lesson_id")) },
     });
 
+    // Best-effort AI cluster suggestion (docs/INTELLIGENCE_LAYER.md) —
+    // advisory, admin-reviewed, and never blocks the student's submission
+    try {
+      const { aiConfigured, suggestForTicket } = await import("@/lib/ai-suggest");
+      if (aiConfigured()) await suggestForTicket(createAdminClient(), inserted.id);
+    } catch (err) {
+      console.error("[ai-suggest on create]", err);
+    }
+
     revalidatePath("/feed");
     const note = upload.note ? ` (${upload.note})` : "";
     return {

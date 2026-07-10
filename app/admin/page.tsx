@@ -5,6 +5,8 @@ import { timeAgo } from "@/lib/format";
 import { ClusterTag, StatusBadge, TicketTag, SparkMark } from "@/components/badges";
 import { FeatureToggle } from "@/components/feature-toggle";
 import { DeleteContentButton } from "@/components/moderation-controls";
+import { SuggestionQueue } from "@/components/suggestion-queue";
+import { aiConfigured } from "@/lib/ai-suggest";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +35,23 @@ export default async function AdminDashboard() {
       sparks: sparks.filter((s) => s.lesson_id === lesson.id),
     }))
     .filter((row) => row.tickets.length > 0 || row.sparks.length > 0);
+
+  const unclustered = tickets.filter(
+    (t) => !t.cluster_id && !["resolved", "closed"].includes(t.status),
+  );
+  const queuedSuggestions = unclustered
+    .filter((t) => t.cluster_suggestion && t.cluster_suggestion_review_status === "unreviewed")
+    .map((t) => ({
+      ticketId: t.id,
+      ticketNumber: t.ticket_number,
+      ticketTitle: t.title,
+      suggestion: t.cluster_suggestion!,
+      confidence: t.cluster_suggestion_confidence,
+      reason: t.cluster_suggestion_reason,
+    }));
+  const scannableCount = unclustered.filter(
+    (t) => !t.cluster_suggestion && t.cluster_suggestion_review_status === "unreviewed",
+  ).length;
 
   const stats = [
     { label: "Sparks", value: sparks.length, accent: "text-ember-deep" },
@@ -73,6 +92,12 @@ export default async function AdminDashboard() {
           </div>
         ))}
       </section>
+
+      <SuggestionQueue
+        suggestions={queuedSuggestions}
+        scannableCount={scannableCount}
+        aiConfigured={aiConfigured()}
+      />
 
       <div className="grid lg:grid-cols-2 gap-8">
         <section className="space-y-3">

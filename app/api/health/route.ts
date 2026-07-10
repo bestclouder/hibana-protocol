@@ -21,6 +21,7 @@ export async function GET() {
     serviceRole,
     email: Boolean(process.env.RESEND_API_KEY),
     payments: Boolean(process.env.STRIPE_SECRET_KEY),
+    ai: Boolean(process.env.OPENAI_API_KEY),
     timestamp: new Date().toISOString(),
   });
 }
