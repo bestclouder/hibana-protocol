@@ -187,7 +187,10 @@ export async function createStruggle(
     // advisory, admin-reviewed, and never blocks the student's submission
     try {
       const { aiConfigured, suggestForTicket } = await import("@/lib/ai-suggest");
-      if (aiConfigured()) await suggestForTicket(createAdminClient(), inserted.id);
+      if (aiConfigured()) {
+        const res = await suggestForTicket(createAdminClient(), inserted.id);
+        if (!res.stored && res.error) console.error("[ai-suggest on create]", res.error);
+      }
     } catch (err) {
       console.error("[ai-suggest on create]", err);
     }

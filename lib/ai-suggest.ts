@@ -150,7 +150,16 @@ export async function suggestForTicket(
     clusters: clusters ?? [],
     peers: (peers ?? []).map((p) => ({ ...p, lessonTitle: lessonTitle(p.lesson_id) })),
   });
-  if ("error" in result) return { stored: false, error: result.error };
+  if ("error" in result) {
+    // Leave the ticket scannable, but make the failure visible to the
+    // organiser (and in the DB) instead of vanishing
+    console.error(`[ai-suggest] ${ticket.ticket_number}:`, result.error);
+    await supabase
+      .from("struggle_tickets")
+      .update({ cluster_suggestion_reason: `Last attempt failed: ${result.error}` })
+      .eq("id", ticketId);
+    return { stored: false, error: result.error };
+  }
 
   const suggestion = result.match ?? (result.newClusterTitle ? `NEW: ${result.newClusterTitle}` : null);
   await supabase
