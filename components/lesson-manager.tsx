@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { createLesson, deleteLesson, updateLesson } from "@/lib/lesson-actions";
 import type { Lesson } from "@/lib/types";
+import { ImageInput } from "@/components/image-input";
 
 const inputClasses =
   "w-full rounded-md border border-sand bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ink/20 placeholder:text-stone/60";
@@ -24,7 +25,7 @@ function LessonRow({
   const [confirming, setConfirming] = useState(false);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const [removeImage, setRemoveImage] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
+  const imageZoneRef = useRef<HTMLDivElement>(null);
 
   async function save() {
     setPending("save");
@@ -34,7 +35,7 @@ function LessonRow({
     formData.set("title", title);
     formData.set("description", description);
     formData.set("sort_order", String(sortOrder));
-    const fileInput = fileRef.current;
+    const fileInput = imageZoneRef.current?.querySelector<HTMLInputElement>('input[type="file"]');
     if (fileInput?.files?.[0]) formData.set("image", fileInput.files[0]);
     if (removeImage) formData.set("remove_image", "on");
     const res = await updateLesson(formData);
@@ -43,7 +44,6 @@ function LessonRow({
     if (res.ok) {
       setEditing(false);
       setRemoveImage(false);
-      if (fileInput) fileInput.value = "";
       router.refresh();
     }
   }
@@ -103,12 +103,9 @@ function LessonRow({
                 </label>
               </div>
             )}
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/*"
-              className={`${inputClasses} file:mr-3 file:border-0 file:bg-sand file:rounded file:px-2 file:py-1 file:text-xs`}
-            />
+            <div ref={imageZoneRef}>
+              <ImageInput name="image" />
+            </div>
           </div>
           <div className="flex gap-2">
             <button
@@ -258,16 +255,10 @@ export function LessonManager({
           <span className="text-sm font-medium">Description</span>
           <textarea name="description" rows={3} className={inputClasses} />
         </label>
-        <label className="block space-y-1.5">
-          <span className="text-sm font-medium">Explainer image (optional)</span>
-          <input
-            type="file"
-            name="image"
-            accept="image/*"
-            className={`${inputClasses} file:mr-3 file:border-0 file:bg-sand file:rounded file:px-2 file:py-1 file:text-xs`}
-          />
-          <span className="block text-xs text-stone">A screenshot or diagram that helps explain the lesson.</span>
-        </label>
+        <div className="space-y-1.5">
+          <span className="block text-sm font-medium">Explainer image (optional)</span>
+          <ImageInput name="image" hint="A screenshot or diagram that helps explain the lesson." />
+        </div>
         {error && (
           <p role="alert" className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-md px-3 py-2">
             {error}

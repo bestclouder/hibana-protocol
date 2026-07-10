@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { ActionResult } from "@/lib/actions";
 import type { Lesson } from "@/lib/types";
+import { ImageInput } from "@/components/image-input";
 
 export interface SimilarIssue {
   id: string;
@@ -143,7 +144,7 @@ export function SubmitForm({
           </select>
         </Field>
         <Field label="Screenshot (optional)">
-          <input type="file" name="image" accept="image/*" className={`${inputClasses} file:mr-3 file:border-0 file:bg-sand file:rounded file:px-2 file:py-1 file:text-xs`} />
+          <ImageInput name="image" />
         </Field>
       </div>
       <div className="grid sm:grid-cols-2 gap-5">

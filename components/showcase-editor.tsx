@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { updateSparkPost } from "@/lib/actions";
 import type { Lesson, SparkPost } from "@/lib/types";
+import { ImageInput } from "@/components/image-input";
 
 const inputClasses =
   "w-full rounded-md border border-sand bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ink/20 placeholder:text-stone/60";
@@ -140,15 +141,10 @@ export function ShowcaseContent({
         ) : (
           <p className="text-xs text-stone">No image on this post yet.</p>
         )}
-        <label className="block space-y-1.5">
-          <span className="text-xs text-stone">Upload a replacement</span>
-          <input
-            type="file"
-            name="image"
-            accept="image/*"
-            className={`${inputClasses} file:mr-3 file:border-0 file:bg-sand file:rounded file:px-2 file:py-1 file:text-xs`}
-          />
-        </label>
+        <div className="space-y-1.5">
+          <span className="block text-xs text-stone">Upload a replacement</span>
+          <ImageInput name="image" />
+        </div>
         <label className="block space-y-1.5">
           <span className="text-xs text-stone">…or paste an image URL</span>
           <input name="image_url" type="url" className={inputClasses} placeholder="https://…" />

@@ -5,6 +5,7 @@ import { useState } from "react";
 import { createSpark, createStruggle } from "@/lib/actions";
 import { draftFromScreenshot, type OnBehalfDraft } from "@/lib/on-behalf-actions";
 import type { Lesson } from "@/lib/types";
+import { ImageInput } from "@/components/image-input";
 
 const inputClasses =
   "w-full rounded-md border border-sand bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ink/20 placeholder:text-stone/60";
@@ -71,18 +72,13 @@ export function OnBehalfWizard({ lessons }: { lessons: Lesson[] }) {
   if (!draft) {
     return (
       <form onSubmit={handleDraft} className="bg-card border border-sand rounded-lg p-6 space-y-4" noValidate>
-        <label className="block space-y-1.5">
-          <span className="text-sm font-medium">Chat screenshot</span>
-          <input
-            type="file"
+        <div className="space-y-1.5">
+          <span className="block text-sm font-medium">Chat screenshot</span>
+          <ImageInput
             name="screenshot"
-            accept="image/*"
-            className={`${inputClasses} file:mr-3 file:border-0 file:bg-sand file:rounded file:px-2 file:py-1 file:text-xs`}
+            hint="Used only to write the draft — it is never uploaded to the site or shown to anyone."
           />
-          <span className="block text-xs text-stone">
-            Used only to write the draft — it is never uploaded to the site or shown to anyone.
-          </span>
-        </label>
+        </div>
         <label className="block space-y-1.5">
           <span className="text-sm font-medium">Extra context (optional)</span>
           <textarea
