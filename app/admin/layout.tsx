@@ -28,6 +28,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <Link href="/threads" className="px-3 py-1.5 rounded-md text-stone hover:text-ink hover:bg-sand/60 font-medium transition-colors">
             Threads
           </Link>
+          <Link href="/admin/on-behalf" className="px-3 py-1.5 rounded-md text-stone hover:text-ink hover:bg-sand/60 font-medium transition-colors">
+            Post on behalf
+          </Link>
         </nav>
       </div>
       {children}

@@ -82,6 +82,12 @@ export default async function AdminDashboard() {
         >
           + New Thread
         </Link>
+        <Link
+          href="/admin/on-behalf"
+          className="rounded-md border border-gold/40 bg-gold-wash text-gold px-3.5 py-1.5 text-sm font-semibold hover:border-gold transition-colors"
+        >
+          📱 Post on behalf
+        </Link>
       </div>
 
       <section className="grid grid-cols-2 sm:grid-cols-5 gap-3">

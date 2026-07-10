@@ -6,6 +6,13 @@ const nextConfig: NextConfig = {
   // so we don't let them block a deployment.
   typescript: { ignoreBuildErrors: true },
   eslint: { ignoreDuringBuilds: true },
+  experimental: {
+    serverActions: {
+      // Screenshot uploads (submit forms, post-on-behalf drafting) exceed
+      // the 1 MB default
+      bodySizeLimit: "8mb",
+    },
+  },
 };
 
 export default nextConfig;
