@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import type { User } from "@supabase/supabase-js";
 
@@ -14,13 +15,17 @@ export function isAdminEmail(email: string | null | undefined): boolean {
   return admins.includes(email.toLowerCase());
 }
 
-export async function getSessionUser(): Promise<User | null> {
+/**
+ * Per-request cached: the layout and the page both ask for the session, and
+ * without cache() each ask is a separate auth-server round trip.
+ */
+export const getSessionUser = cache(async (): Promise<User | null> => {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   return user;
-}
+});
 
 export interface Identity {
   user: User | null;

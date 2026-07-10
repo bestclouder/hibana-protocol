@@ -24,19 +24,16 @@ export default async function FeedPage({
   const lessonById = Object.fromEntries(lessons.map((l) => [l.id, l]));
 
   const targetIds = [...sparks.map((s) => s.id), ...tickets.map((t) => t.id)];
-  const reactionCounts = await getReactionCounts(targetIds);
-
-  // Comment counts for feed badges
   const supabase = await createClient();
+  const [reactionCounts, commentRows] = await Promise.all([
+    getReactionCounts(targetIds),
+    targetIds.length > 0
+      ? supabase.from("comments").select("target_id").in("target_id", targetIds)
+      : Promise.resolve({ data: [] }),
+  ]);
   const commentCounts: Record<string, number> = {};
-  if (targetIds.length > 0) {
-    const { data: commentRows } = await supabase
-      .from("comments")
-      .select("target_id")
-      .in("target_id", targetIds);
-    for (const row of commentRows ?? []) {
-      commentCounts[row.target_id] = (commentCounts[row.target_id] ?? 0) + 1;
-    }
+  for (const row of commentRows.data ?? []) {
+    commentCounts[row.target_id] = (commentCounts[row.target_id] ?? 0) + 1;
   }
 
   const featured = sparks.filter((s) => s.featured);
