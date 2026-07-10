@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getLesson, getReflections, getSparks, getTickets } from "@/lib/data";
+import { getIdentity } from "@/lib/auth";
+import { getComments, getLesson, getReactionCounts, getReflections, getSparks, getTickets } from "@/lib/data";
 import { createClient } from "@/lib/supabase/server";
 import { timeAgo } from "@/lib/format";
 import { StatusBadge, TicketTag, SparkMark } from "@/components/badges";
+import { ChatSection } from "@/components/chat-section";
 import { ReflectionForm } from "@/components/reflection-form";
 
 export const dynamic = "force-dynamic";
@@ -14,18 +16,22 @@ export default async function LessonPage({ params }: { params: Promise<{ id: str
   if (!lesson) notFound();
 
   const supabase = await createClient();
-  const [sparks, tickets, reflections, lessonThread] = await Promise.all([
+  const [identity, sparks, tickets, reflections, lessonThread] = await Promise.all([
+    getIdentity(),
     getSparks(lesson.id),
     getTickets({ lessonId: lesson.id }),
     getReflections(lesson.id),
     supabase
       .from("threads")
-      .select("id")
+      .select("id, locked")
       .eq("lesson_id", lesson.id)
       .eq("kind", "lesson")
       .maybeSingle()
       .then((r) => r.data),
   ]);
+
+  const chatMessages = lessonThread ? await getComments(lessonThread.id) : [];
+  const messageReactions = await getReactionCounts(chatMessages.map((c) => c.id));
 
   const avgConfidence =
     reflections.filter((r) => r.confidence_rating).length > 0
@@ -36,7 +42,7 @@ export default async function LessonPage({ params }: { params: Promise<{ id: str
       : null;
 
   return (
-    <main className="max-w-5xl mx-auto px-4 sm:px-6 py-10 space-y-8">
+    <main className="max-w-5xl mx-auto px-4 sm:px-6 py-10 space-y-6">
       <div>
         <Link href="/feed" className="text-sm text-stone hover:text-ink transition-colors">
           ← Back to feed
@@ -46,23 +52,6 @@ export default async function LessonPage({ params }: { params: Promise<{ id: str
       <header className="space-y-2">
         <p className="font-mono text-[0.65rem] uppercase tracking-[0.18em] text-stone">Lesson</p>
         <h1 className="font-display text-3xl font-semibold tracking-tight">{lesson.title}</h1>
-        {lesson.description && <p className="text-stone text-sm max-w-2xl">{lesson.description}</p>}
-        {lesson.image_url && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={lesson.image_url}
-            alt={`Illustration for ${lesson.title}`}
-            className="rounded-lg border border-sand max-w-2xl w-full"
-          />
-        )}
-        {lessonThread && (
-          <Link
-            href={`/threads/${lessonThread.id}`}
-            className="inline-flex items-center gap-1.5 rounded-md bg-ink text-paper px-4 py-2 text-sm font-semibold hover:opacity-90 transition-opacity"
-          >
-            💬 Join the lesson discussion
-          </Link>
-        )}
         <div className="flex gap-4 text-sm text-stone pt-1">
           <span>
             <span className="font-semibold text-ember-deep">{sparks.length}</span> showcased
@@ -81,19 +70,62 @@ export default async function LessonPage({ params }: { params: Promise<{ id: str
         </div>
       </header>
 
-      <div className="grid lg:grid-cols-2 gap-8 items-start">
-        <div className="space-y-8">
-          <section className="space-y-3">
-            <h2 className="font-display text-lg font-semibold">
-              <SparkMark /> Showcase
+      {(lesson.description || lesson.image_url) && (
+        <article className="bg-card border border-sand rounded-lg p-5 sm:p-6 space-y-4">
+          {lesson.description && (
+            <p className="text-sm leading-relaxed whitespace-pre-wrap">{lesson.description}</p>
+          )}
+          {lesson.image_url && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={lesson.image_url}
+              alt={`Illustration for ${lesson.title}`}
+              className="rounded-lg border border-sand max-w-full"
+            />
+          )}
+        </article>
+      )}
+
+      <div className="grid lg:grid-cols-[1fr_320px] gap-8 items-start">
+        <div>
+          {lessonThread ? (
+            <>
+              {lessonThread.locked && (
+                <p className="text-sm text-stone bg-sand/50 border border-sand rounded-md px-3 py-2 mb-3">
+                  This discussion is locked — replies are closed.
+                </p>
+              )}
+              <ChatSection
+                targetId={lessonThread.id}
+                targetType="thread"
+                comments={chatMessages}
+                identityName={identity.name}
+                isAdmin={identity.isAdmin}
+                readOnly={Boolean(lessonThread.locked)}
+                messageReactions={messageReactions}
+                heading="Chat"
+                placeholder="Share a takeaway, ask about anything unclear…"
+              />
+            </>
+          ) : (
+            <p className="text-sm text-stone border border-dashed border-sand rounded-lg p-6 text-center">
+              This lesson&apos;s discussion isn&apos;t set up yet.
+            </p>
+          )}
+        </div>
+
+        <aside className="space-y-6">
+          <section className="space-y-2">
+            <h2 className="font-mono text-[0.65rem] uppercase tracking-[0.18em] text-stone">
+              <SparkMark /> Showcase from this lesson
             </h2>
             {sparks.length === 0 ? (
-              <p className="text-sm text-stone">Nothing showcased for this lesson yet.</p>
+              <p className="text-xs text-stone">Nothing showcased yet.</p>
             ) : (
-              <ul className="space-y-2">
-                {sparks.map((s) => (
-                  <li key={s.id} className="bg-card border border-sand rounded-lg px-4 py-3">
-                    <Link href={`/sparks/${s.id}`} className="text-sm font-medium hover:text-ember-deep">
+              <ul className="space-y-1.5">
+                {sparks.slice(0, 6).map((s) => (
+                  <li key={s.id} className="bg-card border border-sand rounded-lg px-3.5 py-2.5">
+                    <Link href={`/sparks/${s.id}`} className="text-sm font-medium hover:text-ember-deep line-clamp-1">
                       {s.title}
                     </Link>
                     <p className="text-xs text-stone mt-0.5">
@@ -105,19 +137,23 @@ export default async function LessonPage({ params }: { params: Promise<{ id: str
             )}
           </section>
 
-          <section className="space-y-3">
-            <h2 className="font-display text-lg font-semibold">Struggles</h2>
+          <section className="space-y-2">
+            <h2 className="font-mono text-[0.65rem] uppercase tracking-[0.18em] text-stone">
+              Struggles from this lesson
+            </h2>
             {tickets.length === 0 ? (
-              <p className="text-sm text-stone">No blockers reported for this lesson.</p>
+              <p className="text-xs text-stone">No blockers reported.</p>
             ) : (
-              <ul className="space-y-2">
-                {tickets.map((t) => (
-                  <li key={t.id} className="bg-card border border-sand rounded-lg px-4 py-3">
-                    <div className="flex items-center gap-2 flex-wrap">
+              <ul className="space-y-1.5">
+                {tickets.slice(0, 6).map((t) => (
+                  <li key={t.id} className="bg-card border border-sand rounded-lg px-3.5 py-2.5">
+                    <div className="flex items-center gap-2">
                       <TicketTag number={t.ticket_number} />
                       <Link href={`/tickets/${t.id}`} className="text-sm font-medium hover:text-dusk-deep flex-1 truncate">
                         {t.title}
                       </Link>
+                    </div>
+                    <div className="mt-1">
                       <StatusBadge status={t.status} />
                     </div>
                   </li>
@@ -126,37 +162,34 @@ export default async function LessonPage({ params }: { params: Promise<{ id: str
             )}
           </section>
 
-          <section className="space-y-3">
-            <h2 className="font-display text-lg font-semibold">Reflections</h2>
-            {reflections.length === 0 ? (
-              <p className="text-sm text-stone">
-                No reflections yet — be the first to close out this lesson.
-              </p>
-            ) : (
-              <ul className="space-y-2">
-                {reflections.map((r) => (
-                  <li key={r.id} className="bg-card border border-sand rounded-lg px-4 py-3 space-y-1">
+          {reflections.length > 0 && (
+            <section className="space-y-2">
+              <h2 className="font-mono text-[0.65rem] uppercase tracking-[0.18em] text-stone">
+                Reflections
+              </h2>
+              <ul className="space-y-1.5">
+                {reflections.slice(0, 4).map((r) => (
+                  <li key={r.id} className="bg-card border border-sand rounded-lg px-3.5 py-2.5 space-y-0.5">
                     <div className="flex items-center gap-2 text-xs text-stone">
                       <span className="font-medium text-ink">{r.author_name}</span>
-                      {r.confidence_rating && (
-                        <span className="font-mono">confidence {r.confidence_rating}/5</span>
-                      )}
-                      <span>{timeAgo(r.created_at)}</span>
+                      {r.confidence_rating && <span className="font-mono">{r.confidence_rating}/5</span>}
                     </div>
-                    {r.main_takeaway && <p className="text-sm">{r.main_takeaway}</p>}
-                    {r.what_was_confusing && (
-                      <p className="text-xs text-stone">
-                        <span className="font-medium">Still fuzzy:</span> {r.what_was_confusing}
-                      </p>
-                    )}
+                    {r.main_takeaway && <p className="text-xs">{r.main_takeaway}</p>}
                   </li>
                 ))}
               </ul>
-            )}
-          </section>
-        </div>
+            </section>
+          )}
 
-        <ReflectionForm lessonId={lesson.id} />
+          <details className="bg-card border border-sand rounded-lg">
+            <summary className="cursor-pointer px-4 py-3 text-sm font-medium hover:text-ink text-stone">
+              ✍️ Write a reflection
+            </summary>
+            <div className="px-1 pb-1">
+              <ReflectionForm lessonId={lesson.id} />
+            </div>
+          </details>
+        </aside>
       </div>
     </main>
   );

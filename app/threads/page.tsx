@@ -107,7 +107,7 @@ export default async function ThreadsPage() {
                 {lessonThreads.map((t) => (
                   <li key={t.id}>
                     <Link
-                      href={`/threads/${t.id}`}
+                      href={t.lesson_id ? `/lessons/${t.lesson_id}` : `/threads/${t.id}`}
                       className="flex items-center gap-3 bg-card border border-sand rounded-lg px-4 py-3 hover:border-stone transition-colors"
                     >
                       <span className="text-sm font-medium flex-1 truncate">{t.title}</span>

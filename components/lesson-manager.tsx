@@ -78,12 +78,13 @@ function LessonRow({
             </label>
           </div>
           <label className="block space-y-1">
-            <span className="text-xs font-medium text-stone">Description</span>
+            <span className="text-xs font-medium text-stone">Lesson post</span>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              rows={2}
+              rows={5}
               className={inputClasses}
+              placeholder="What this lesson covers — this is the post students see above the chat."
             />
           </label>
           <div className="space-y-1.5">
@@ -252,8 +253,13 @@ export function LessonManager({
           <input name="title" className={inputClasses} placeholder="e.g. Lesson 5: Shipping your agent" maxLength={200} />
         </label>
         <label className="block space-y-1.5">
-          <span className="text-sm font-medium">Description</span>
-          <textarea name="description" rows={3} className={inputClasses} />
+          <span className="text-sm font-medium">Lesson post</span>
+          <textarea
+            name="description"
+            rows={5}
+            className={inputClasses}
+            placeholder="What this lesson covers — this is the post students see above the chat."
+          />
         </label>
         <div className="space-y-1.5">
           <span className="block text-sm font-medium">Explainer image (optional)</span>
