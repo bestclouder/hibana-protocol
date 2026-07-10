@@ -5,7 +5,12 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getIdentity } from "@/lib/auth";
 import { writeAudit } from "@/lib/audit";
-import { PILOT_SPACE_ID, type ReactionType, type TargetType } from "@/lib/types";
+import {
+  COMMENT_EMOJI,
+  PILOT_SPACE_ID,
+  REACTION_LABELS,
+  type TargetType,
+} from "@/lib/types";
 
 export type ActionResult<T = undefined> =
   | { ok: true; message: string; data?: T }
@@ -209,11 +214,18 @@ export async function createStruggle(
 
 export async function addReaction(input: {
   targetId: string;
-  targetType: TargetType;
-  reactionType: ReactionType;
+  targetType: TargetType | "comment";
+  reactionType: string;
   reactorName?: string;
 }): Promise<ActionResult> {
   try {
+    // Comments take quick emoji; posts take the labeled reaction set
+    const allowed =
+      input.targetType === "comment"
+        ? (COMMENT_EMOJI as readonly string[]).includes(input.reactionType)
+        : input.reactionType in REACTION_LABELS;
+    if (!allowed) return { ok: false, message: "That reaction isn't available here." };
+
     const supabase = await createClient();
     const identity = await getIdentity();
     const { error } = await supabase.from("reactions").insert({

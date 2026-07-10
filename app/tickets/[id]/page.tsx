@@ -17,13 +17,13 @@ export default async function TicketPage({ params }: { params: Promise<{ id: str
   const ticket = await getTicket(id);
   if (!ticket) notFound();
 
-  const [identity, lesson, cluster, comments, reactionCounts] = await Promise.all([
+  const [identity, lesson, cluster, comments] = await Promise.all([
     getIdentity(),
     ticket.lesson_id ? getLesson(ticket.lesson_id) : null,
     ticket.cluster_id ? getCluster(ticket.cluster_id) : null,
     getComments(ticket.id),
-    getReactionCounts([ticket.id]),
   ]);
+  const reactionCounts = await getReactionCounts([ticket.id, ...comments.map((c) => c.id)]);
   const allLessons = identity.isAdmin ? await getLessons() : [];
 
   return (
@@ -106,6 +106,7 @@ export default async function TicketPage({ params }: { params: Promise<{ id: str
         identityName={identity.name}
         isAdmin={identity.isAdmin}
         placeholder="Ask a question, share what worked for you…"
+        messageReactions={reactionCounts}
       />
 
       <p className="text-xs text-stone">Last updated {timeAgo(ticket.last_updated_at)}</p>

@@ -13,7 +13,8 @@ export type ReactionType =
   | "still_stuck"
   | "inspired"
   | "great_work"
-  | "i_can_help";
+  | "i_can_help"
+  | "heart";
 
 export type TargetType = "spark_post" | "struggle_ticket";
 
@@ -149,6 +150,7 @@ export interface EmailNotification {
 export const PILOT_SPACE_ID = "a1b2c3d4-0000-0000-0000-000000000001";
 
 export const REACTION_LABELS: Record<ReactionType, string> = {
+  heart: "Love it",
   i_have_this_too: "I have this too",
   this_helped_me: "This helped me",
   still_stuck: "Still stuck",
@@ -158,6 +160,7 @@ export const REACTION_LABELS: Record<ReactionType, string> = {
 };
 
 export const REACTION_EMOJI: Record<ReactionType, string> = {
+  heart: "❤️",
   i_have_this_too: "🙋",
   this_helped_me: "💡",
   still_stuck: "🌀",
@@ -167,6 +170,7 @@ export const REACTION_EMOJI: Record<ReactionType, string> = {
 };
 
 export const SPARK_REACTIONS: ReactionType[] = [
+  "heart",
   "inspired",
   "great_work",
   "this_helped_me",
@@ -178,6 +182,9 @@ export const STRUGGLE_REACTIONS: ReactionType[] = [
   "this_helped_me",
   "still_stuck",
 ];
+
+/** Quick emoji palette for replies/chat messages. */
+export const COMMENT_EMOJI = ["👍", "❤️", "😂", "🎉", "💡", "🙌"] as const;
 
 export const STATUS_LABELS: Record<TicketStatus, string> = {
   open: "Open",

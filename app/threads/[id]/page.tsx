@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getIdentity } from "@/lib/auth";
-import { getComments, getLesson, getThread } from "@/lib/data";
+import { getComments, getLesson, getReactionCounts, getThread } from "@/lib/data";
 import { fullDate } from "@/lib/format";
 import { ChatSection } from "@/components/chat-section";
 import { ModerationBar, ThreadFlagButton } from "@/components/moderation-controls";
@@ -18,6 +18,7 @@ export default async function ThreadPage({ params }: { params: Promise<{ id: str
     thread.lesson_id ? getLesson(thread.lesson_id) : null,
     getComments(thread.id),
   ]);
+  const replyReactions = await getReactionCounts(replies.map((r) => r.id));
   const isLessonThread = thread.kind === "lesson";
 
   return (
@@ -96,6 +97,7 @@ export default async function ThreadPage({ params }: { params: Promise<{ id: str
         identityName={identity.name}
         isAdmin={identity.isAdmin}
         readOnly={thread.locked}
+        messageReactions={replyReactions}
         heading="Chat"
         placeholder={
           isLessonThread

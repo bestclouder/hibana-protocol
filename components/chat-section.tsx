@@ -6,6 +6,7 @@ import { addComment } from "@/lib/actions";
 import { timeAgo } from "@/lib/format";
 import type { Comment, TargetType } from "@/lib/types";
 import { DeleteCommentButton } from "@/components/moderation-controls";
+import { EmojiReactions } from "@/components/emoji-reactions";
 
 /**
  * Chat-style discussion: message rows plus a compact composer.
@@ -21,6 +22,7 @@ export function ChatSection({
   readOnly = false,
   heading = "Discussion",
   placeholder = "Write a message…",
+  messageReactions,
 }: {
   targetId: string;
   targetType: TargetType | "thread";
@@ -30,6 +32,8 @@ export function ChatSection({
   readOnly?: boolean;
   heading?: string;
   placeholder?: string;
+  /** Per-message emoji reaction counts, keyed by comment id. */
+  messageReactions?: Record<string, Record<string, number>>;
 }) {
   const router = useRouter();
   const [body, setBody] = useState("");
@@ -112,6 +116,7 @@ export function ChatSection({
                     </span>
                   )}
                 </div>
+                <EmojiReactions targetId={c.id} initialCounts={messageReactions?.[c.id] ?? {}} />
               </li>
             );
           })}

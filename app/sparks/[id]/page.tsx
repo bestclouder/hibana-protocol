@@ -16,12 +16,12 @@ export default async function SparkPage({ params }: { params: Promise<{ id: stri
   const spark = await getSpark(id);
   if (!spark) notFound();
 
-  const [identity, lesson, comments, reactionCounts] = await Promise.all([
+  const [identity, lesson, comments] = await Promise.all([
     getIdentity(),
     spark.lesson_id ? getLesson(spark.lesson_id) : null,
     getComments(spark.id),
-    getReactionCounts([spark.id]),
   ]);
+  const reactionCounts = await getReactionCounts([spark.id, ...comments.map((c) => c.id)]);
   const allLessons = identity.isAdmin ? await getLessons() : [];
 
   return (
@@ -115,6 +115,7 @@ export default async function SparkPage({ params }: { params: Promise<{ id: stri
         identityName={identity.name}
         isAdmin={identity.isAdmin}
         placeholder="Ask how they did it, share your take…"
+        messageReactions={reactionCounts}
       />
     </main>
   );

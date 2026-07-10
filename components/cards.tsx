@@ -8,9 +8,11 @@ import {
   type StruggleTicket,
 } from "@/lib/types";
 import { SparkMark, StatusBadge, TicketTag } from "@/components/badges";
+import { LikeButton } from "@/components/like-button";
 
 function ReactionSummary({ counts }: { counts?: Record<string, number> }) {
-  const entries = Object.entries(counts ?? {}).filter(([, n]) => n > 0);
+  // hearts render as the LikeButton, not in the summary
+  const entries = Object.entries(counts ?? {}).filter(([type, n]) => n > 0 && type !== "heart");
   if (entries.length === 0) return null;
   return (
     <span className="flex items-center gap-2 text-xs text-stone">
@@ -76,6 +78,7 @@ export function ShowcaseCard({
           <ReactionSummary counts={reactionCounts} />
           {commentCount ? <span>💬 {commentCount}</span> : null}
           <span className="ml-auto whitespace-nowrap">{timeAgo(spark.created_at)}</span>
+          <LikeButton sparkId={spark.id} initialCount={reactionCounts?.heart ?? 0} />
         </div>
       </div>
     </Link>
