@@ -90,7 +90,7 @@ export default async function ThreadsPage() {
         <h1 className="font-display text-3xl font-semibold tracking-tight">Threads</h1>
         <p className="text-stone mt-1 text-sm">
           Every conversation in the room — lesson discussions, organiser topics, and the chatter
-          around each Spark and Struggle.
+          around every showcase post and struggle.
         </p>
       </div>
 
@@ -159,11 +159,11 @@ export default async function ThreadsPage() {
 
           <section className="space-y-2">
             <h2 className="font-mono text-[0.65rem] uppercase tracking-[0.18em] text-stone">
-              Around the Sparks &amp; Struggles
+              Around the Showcase &amp; Struggles
             </h2>
             {conversations.length === 0 ? (
               <p className="text-sm text-stone border border-dashed border-sand rounded-lg p-8 text-center">
-                No posts yet — conversations open up as soon as someone shares a Spark or Struggle.
+                No posts yet — conversations open up as soon as someone showcases work or shares a struggle.
               </p>
             ) : (
               <ul className="space-y-1.5">

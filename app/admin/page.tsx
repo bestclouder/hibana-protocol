@@ -54,7 +54,7 @@ export default async function AdminDashboard() {
   ).length;
 
   const stats = [
-    { label: "Sparks", value: sparks.length, accent: "text-ember-deep" },
+    { label: "Showcase", value: sparks.length, accent: "text-ember-deep" },
     { label: "Struggle tickets", value: tickets.length, accent: "text-dusk" },
     { label: "Open tickets", value: openTickets.length, accent: "text-gold" },
     { label: "Resolved", value: resolvedCount, accent: "text-moss" },
@@ -68,7 +68,7 @@ export default async function AdminDashboard() {
           href="/submit/spark"
           className="rounded-md bg-ember text-white px-3.5 py-1.5 text-sm font-semibold hover:bg-ember-deep transition-colors"
         >
-          + New Spark
+          + Add to Showcase
         </Link>
         <Link
           href="/submit/struggle"
@@ -175,10 +175,10 @@ export default async function AdminDashboard() {
 
       <section className="space-y-3">
         <h2 className="font-display text-lg font-semibold">
-          <SparkMark /> Sparks — feature the best wins
+          <SparkMark /> Showcase — feature the best work
         </h2>
         {sparks.length === 0 ? (
-          <p className="text-sm text-stone">No sparks shared yet.</p>
+          <p className="text-sm text-stone">Nothing showcased yet.</p>
         ) : (
           <ul className="space-y-2">
             {sparks.slice(0, 8).map((s) => (
@@ -209,7 +209,7 @@ export default async function AdminDashboard() {
                   <th className="py-2 pr-4 font-medium">Lesson</th>
                   <th className="py-2 pr-4 font-medium">Struggles</th>
                   <th className="py-2 pr-4 font-medium">Open</th>
-                  <th className="py-2 pr-4 font-medium">Sparks</th>
+                  <th className="py-2 pr-4 font-medium">Showcase</th>
                 </tr>
               </thead>
               <tbody>

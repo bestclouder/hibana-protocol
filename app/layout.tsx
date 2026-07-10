@@ -94,8 +94,7 @@ export default async function RootLayout({
         <footer className="border-t border-sand py-6 mt-12">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-wrap items-center justify-between gap-2 text-xs text-stone">
             <p>
-              Hibana Protocol — every struggle becomes a tracked ticket, every
-              spark lights the room.
+              Hibana Protocol — every struggle becomes a tracked ticket, every showcase lights the room.
             </p>
             <p className="font-mono tracking-wider">AOAI PILOT</p>
           </div>

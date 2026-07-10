@@ -165,9 +165,9 @@ export async function toggleFeatured(input: { sparkId: string; featured: boolean
 
     revalidatePath("/feed");
     revalidatePath("/admin");
-    return { ok: true, message: input.featured ? "Spark featured." : "Spark unfeatured." };
+    return { ok: true, message: input.featured ? "Featured in the showcase." : "Unfeatured." };
   } catch (err) {
     console.error("[admin]", err);
-    return { ok: false, message: "Could not update the Spark. Please try again." };
+    return { ok: false, message: "Could not update. Please try again." };
   }
 }

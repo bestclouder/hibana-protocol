@@ -35,7 +35,7 @@ export default async function SparkPage({ params }: { params: Promise<{ id: stri
       <header className="space-y-3">
         <div className="flex items-center gap-2 flex-wrap text-xs">
           <span className="inline-flex items-center gap-1 font-medium text-ember-deep uppercase tracking-wider">
-            <SparkMark /> Spark
+            <SparkMark /> Showcase
           </span>
           {spark.featured && (
             <span className="rounded-full bg-ember-wash text-ember-deep border border-ember/25 px-2 py-0.5 font-medium">
@@ -47,7 +47,7 @@ export default async function SparkPage({ params }: { params: Promise<{ id: stri
           {spark.title}
         </h1>
         <p className="text-sm text-stone">
-          Shared by <span className="font-medium text-ink">{spark.author_name}</span> ·{" "}
+          Showcased by <span className="font-medium text-ink">{spark.author_name}</span> ·{" "}
           {fullDate(spark.created_at)}
           {lesson && (
             <>

@@ -57,7 +57,7 @@ export default async function LessonPage({ params }: { params: Promise<{ id: str
         )}
         <div className="flex gap-4 text-sm text-stone pt-1">
           <span>
-            <span className="font-semibold text-ember-deep">{sparks.length}</span> sparks
+            <span className="font-semibold text-ember-deep">{sparks.length}</span> showcased
           </span>
           <span>
             <span className="font-semibold text-dusk">{tickets.length}</span> struggles
@@ -77,10 +77,10 @@ export default async function LessonPage({ params }: { params: Promise<{ id: str
         <div className="space-y-8">
           <section className="space-y-3">
             <h2 className="font-display text-lg font-semibold">
-              <SparkMark /> Sparks
+              <SparkMark /> Showcase
             </h2>
             {sparks.length === 0 ? (
-              <p className="text-sm text-stone">No wins shared for this lesson yet.</p>
+              <p className="text-sm text-stone">Nothing showcased for this lesson yet.</p>
             ) : (
               <ul className="space-y-2">
                 {sparks.map((s) => (

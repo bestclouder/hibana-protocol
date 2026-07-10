@@ -112,7 +112,7 @@ export function SubmitForm({
         <input
           name="title"
           className={inputClasses}
-          placeholder={kind === "spark" ? "What did you pull off?" : "What are you stuck on?"}
+          placeholder={kind === "spark" ? "What did you build or pull off?" : "What are you stuck on?"}
           maxLength={200}
         />
       </Field>
@@ -121,7 +121,7 @@ export function SubmitForm({
         hint={
           kind === "struggle"
             ? "What did you try? What error do you see? The more detail, the faster the fix."
-            : "Tell the room how you did it — someone is stuck exactly where you started."
+            : "Tell the room what it is and how you did it — someone is stuck exactly where you started."
         }
       >
         <textarea name="description" rows={5} className={inputClasses} />
@@ -245,7 +245,7 @@ export function SubmitForm({
         {pending
           ? "Saving…"
           : kind === "spark"
-            ? "Post Spark"
+            ? "Add to Showcase"
             : "Create ticket"}
       </button>
     </form>
