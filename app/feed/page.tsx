@@ -82,28 +82,27 @@ export default async function FeedPage({
             Lessons
           </h2>
           <nav className="flex lg:flex-col gap-1 flex-wrap">
-            <Link
-              href={lessonHref()}
-              className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
-                !lessonId ? "bg-ink text-paper font-medium" : "text-stone hover:bg-sand/60 hover:text-ink"
-              }`}
-            >
-              All lessons
-            </Link>
             {lessons.map((l) => (
               <Link
                 key={l.id}
-                href={lessonHref(l.id)}
-                className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
-                  lessonId === l.id
-                    ? "bg-ink text-paper font-medium"
-                    : "text-stone hover:bg-sand/60 hover:text-ink"
-                }`}
+                href={`/lessons/${l.id}`}
+                className="px-3 py-1.5 rounded-md text-sm text-stone hover:bg-sand/60 hover:text-ink transition-colors"
               >
                 {l.title}
               </Link>
             ))}
+            {lessonId && (
+              <Link
+                href={lessonHref()}
+                className="px-3 py-1.5 rounded-md text-sm bg-ink text-paper font-medium"
+              >
+                ← Clear lesson filter
+              </Link>
+            )}
           </nav>
+          <p className="text-[0.65rem] text-stone mt-2 px-1">
+            Each lesson opens its post and chat.
+          </p>
         </aside>
 
         <div className="space-y-10 min-w-0">
