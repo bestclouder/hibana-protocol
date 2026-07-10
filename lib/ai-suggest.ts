@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { chatJSON, modelChain } from "@/lib/openai";
 
 /**
  * AI cluster suggestion (docs/INTELLIGENCE_LAYER.md). Sends a struggle
@@ -7,9 +8,6 @@ import type { SupabaseClient } from "@supabase/supabase-js";
  * organiser approves (docs/AGENTIC_LAYER.md). Server-side only.
  */
 
-const OPENAI_ENDPOINT = "https://api.openai.com/v1/chat/completions";
-const DEFAULT_MODEL = "gpt-4o-mini";
-
 export interface SuggestionResult {
   /** COMMON-### of an existing cluster, or null */
   match: string | null;
@@ -17,6 +15,8 @@ export interface SuggestionResult {
   newClusterTitle: string | null;
   confidence: number;
   reason: string;
+  /** which model actually answered (cheapest-first fallback chain) */
+  model: string;
 }
 
 interface TicketInput {
@@ -35,11 +35,6 @@ export async function generateClusterSuggestion(input: {
   clusters: { cluster_number: string; title: string; summary: string | null }[];
   peers: TicketInput[];
 }): Promise<SuggestionResult | { error: string }> {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    return { error: "AI suggestions aren't configured yet (OPENAI_API_KEY missing)." };
-  }
-
   const system = `You triage struggle tickets for an online course community. Students report blockers; the organiser groups tickets describing the SAME underlying issue into "common pain" clusters so one solution can fix many.
 
 Decide whether the NEW ticket belongs to an existing cluster, matches other unclustered tickets (making a new cluster worthwhile), or stands alone.
@@ -70,46 +65,25 @@ ${input.peers.length > 0 ? input.peers.map(describe).join("\n") : "(none)"}
 NEW TICKET:
 ${describe(input.ticket)}`;
 
-  try {
-    const res = await fetch(OPENAI_ENDPOINT, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: process.env.OPENAI_MODEL ?? DEFAULT_MODEL,
-        response_format: { type: "json_object" },
-        temperature: 0.2,
-        max_tokens: 300,
-        messages: [
-          { role: "system", content: system },
-          { role: "user", content: user },
-        ],
-      }),
-      signal: AbortSignal.timeout(15000),
-    });
-    if (!res.ok) {
-      const body = await res.text();
-      return { error: `OpenAI returned ${res.status}: ${body.slice(0, 200)}` };
-    }
-    const data = await res.json();
-    const parsed = JSON.parse(data.choices?.[0]?.message?.content ?? "{}");
-    const confidence = Number(parsed.confidence);
-    return {
-      match: typeof parsed.match === "string" && /^COMMON-\d+$/.test(parsed.match) ? parsed.match : null,
-      newClusterTitle:
-        typeof parsed.new_cluster_title === "string" && parsed.new_cluster_title.trim()
-          ? parsed.new_cluster_title.trim().slice(0, 200)
-          : null,
-      confidence: Number.isFinite(confidence) ? Math.min(1, Math.max(0, confidence)) : 0,
-      reason: typeof parsed.reason === "string" ? parsed.reason.slice(0, 500) : "",
-    };
-  } catch (err) {
-    return {
-      error: err instanceof Error && err.name === "TimeoutError" ? "OpenAI request timed out." : "Could not reach OpenAI.",
-    };
-  }
+  const result = await chatJSON({
+    models: modelChain(process.env.OPENAI_MODEL),
+    system,
+    user,
+    maxOutputTokens: 600,
+  });
+  if (!result.ok) return { error: result.error };
+  const parsed = result.json;
+  const confidence = Number(parsed.confidence);
+  return {
+    match: typeof parsed.match === "string" && /^COMMON-\d+$/.test(parsed.match) ? parsed.match : null,
+    newClusterTitle:
+      typeof parsed.new_cluster_title === "string" && parsed.new_cluster_title.trim()
+        ? parsed.new_cluster_title.trim().slice(0, 200)
+        : null,
+    confidence: Number.isFinite(confidence) ? Math.min(1, Math.max(0, confidence)) : 0,
+    reason: typeof parsed.reason === "string" ? parsed.reason.slice(0, 500) : "",
+    model: result.model,
+  };
 }
 
 /**
@@ -166,7 +140,7 @@ export async function suggestForTicket(
     .from("struggle_tickets")
     .update({
       cluster_suggestion: suggestion,
-      cluster_suggestion_source: `openai/${process.env.OPENAI_MODEL ?? DEFAULT_MODEL}`,
+      cluster_suggestion_source: `openai/${result.model}`,
       cluster_suggestion_confidence: result.confidence,
       cluster_suggestion_reason: result.reason,
       cluster_suggestion_review_status: suggestion ? "unreviewed" : "no_match",

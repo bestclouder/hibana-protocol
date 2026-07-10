@@ -4,6 +4,7 @@ import { requireAdmin, NOT_ADMIN_MESSAGE } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { writeAudit } from "@/lib/audit";
 import { getLessons } from "@/lib/data";
+import { chatJSON, modelChain } from "@/lib/openai";
 import type { ActionResult } from "@/lib/actions";
 
 export interface OnBehalfDraft {
@@ -28,8 +29,7 @@ export async function draftFromScreenshot(
     const admin = await requireAdmin();
     if (!admin) return { ok: false, message: NOT_ADMIN_MESSAGE };
 
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) {
+    if (!process.env.OPENAI_API_KEY) {
       return {
         ok: false,
         message: "AI drafting isn't configured yet (OPENAI_API_KEY missing).",
@@ -78,33 +78,15 @@ Respond with JSON only: {"kind":"showcase"|"struggle","student_name":string,"tit
       userContent.push({ type: "text", text: "(no screenshot provided — draft from the organiser's note alone)" });
     }
 
-    const res = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
-        response_format: { type: "json_object" },
-        temperature: 0.3,
-        max_tokens: 500,
-        messages: [
-          { role: "system", content: system },
-          { role: "user", content: userContent },
-        ],
-      }),
-      signal: AbortSignal.timeout(30000),
+    // Cheapest-first: extraction jobs don't need a big model
+    const result = await chatJSON({
+      models: modelChain(process.env.OPENAI_DRAFT_MODEL ?? process.env.OPENAI_MODEL),
+      system,
+      user: userContent,
+      maxOutputTokens: 900,
     });
-    if (!res.ok) {
-      const body = await res.text();
-      const quota = res.status === 429;
-      return {
-        ok: false,
-        message: quota
-          ? "OpenAI says the account is out of quota — top up billing at platform.openai.com and try again."
-          : `OpenAI returned ${res.status}: ${body.slice(0, 200)}`,
-      };
-    }
-    const data = await res.json();
-    const parsed = JSON.parse(data.choices?.[0]?.message?.content ?? "{}");
+    if (!result.ok) return { ok: false, message: result.error };
+    const parsed = result.json;
 
     const lessonIndex = Number(parsed.lesson_index);
     const lessonId =
@@ -115,7 +97,11 @@ Respond with JSON only: {"kind":"showcase"|"struggle","student_name":string,"tit
       action: "ai.on_behalf_drafted",
       target_type: "draft",
       actor_email: admin.email,
-      metadata: { kind: parsed.kind, had_screenshot: file instanceof File && file.size > 0 },
+      metadata: {
+        kind: parsed.kind,
+        had_screenshot: file instanceof File && file.size > 0,
+        model: result.model,
+      },
     });
 
     return {
