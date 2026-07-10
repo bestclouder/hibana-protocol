@@ -6,7 +6,7 @@ import { fullDate, timeAgo } from "@/lib/format";
 import { STRUGGLE_REACTIONS } from "@/lib/types";
 import { StatusBadge, TicketTag, ClusterTag } from "@/components/badges";
 import { ReactionBar } from "@/components/reaction-bar";
-import { CommentSection } from "@/components/comment-section";
+import { ChatSection } from "@/components/chat-section";
 import { SolutionPanel } from "@/components/solution-view";
 import { ModerationBar } from "@/components/moderation-controls";
 
@@ -99,12 +99,13 @@ export default async function TicketPage({ params }: { params: Promise<{ id: str
         />
       </section>
 
-      <CommentSection
+      <ChatSection
         targetId={ticket.id}
         targetType="struggle_ticket"
         comments={comments}
         identityName={identity.name}
         isAdmin={identity.isAdmin}
+        placeholder="Ask a question, share what worked for you…"
       />
 
       <p className="text-xs text-stone">Last updated {timeAgo(ticket.last_updated_at)}</p>

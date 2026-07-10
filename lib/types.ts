@@ -124,6 +124,7 @@ export interface Thread {
   body: string | null;
   pinned: boolean;
   locked: boolean;
+  kind: "topic" | "lesson";
   created_at: string;
 }
 

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getLesson, getReflections, getSparks, getTickets } from "@/lib/data";
+import { createClient } from "@/lib/supabase/server";
 import { timeAgo } from "@/lib/format";
 import { StatusBadge, TicketTag, SparkMark } from "@/components/badges";
 import { ReflectionForm } from "@/components/reflection-form";
@@ -12,10 +13,18 @@ export default async function LessonPage({ params }: { params: Promise<{ id: str
   const lesson = await getLesson(id);
   if (!lesson) notFound();
 
-  const [sparks, tickets, reflections] = await Promise.all([
+  const supabase = await createClient();
+  const [sparks, tickets, reflections, lessonThread] = await Promise.all([
     getSparks(lesson.id),
     getTickets({ lessonId: lesson.id }),
     getReflections(lesson.id),
+    supabase
+      .from("threads")
+      .select("id")
+      .eq("lesson_id", lesson.id)
+      .eq("kind", "lesson")
+      .maybeSingle()
+      .then((r) => r.data),
   ]);
 
   const avgConfidence =
@@ -38,6 +47,14 @@ export default async function LessonPage({ params }: { params: Promise<{ id: str
         <p className="font-mono text-[0.65rem] uppercase tracking-[0.18em] text-stone">Lesson</p>
         <h1 className="font-display text-3xl font-semibold tracking-tight">{lesson.title}</h1>
         {lesson.description && <p className="text-stone text-sm max-w-2xl">{lesson.description}</p>}
+        {lessonThread && (
+          <Link
+            href={`/threads/${lessonThread.id}`}
+            className="inline-flex items-center gap-1.5 rounded-md bg-ink text-paper px-4 py-2 text-sm font-semibold hover:opacity-90 transition-opacity"
+          >
+            💬 Join the lesson discussion
+          </Link>
+        )}
         <div className="flex gap-4 text-sm text-stone pt-1">
           <span>
             <span className="font-semibold text-ember-deep">{sparks.length}</span> sparks

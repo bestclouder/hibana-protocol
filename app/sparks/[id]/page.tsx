@@ -6,7 +6,7 @@ import { fullDate } from "@/lib/format";
 import { SPARK_REACTIONS } from "@/lib/types";
 import { SparkMark } from "@/components/badges";
 import { ReactionBar } from "@/components/reaction-bar";
-import { CommentSection } from "@/components/comment-section";
+import { ChatSection } from "@/components/chat-section";
 import { ModerationBar } from "@/components/moderation-controls";
 
 export const dynamic = "force-dynamic";
@@ -108,12 +108,13 @@ export default async function SparkPage({ params }: { params: Promise<{ id: stri
         />
       </section>
 
-      <CommentSection
+      <ChatSection
         targetId={spark.id}
         targetType="spark_post"
         comments={comments}
         identityName={identity.name}
         isAdmin={identity.isAdmin}
+        placeholder="Ask how they did it, share your take…"
       />
     </main>
   );

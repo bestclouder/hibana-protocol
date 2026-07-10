@@ -1,9 +1,17 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { ActionResult } from "@/lib/actions";
 import type { Lesson } from "@/lib/types";
+
+export interface SimilarIssue {
+  id: string;
+  ticketNumber: string;
+  title: string;
+  lessonId: string | null;
+}
 
 const inputClasses =
   "w-full rounded-md border border-sand bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ink/20 focus:border-stone placeholder:text-stone/60";
@@ -37,6 +45,7 @@ export function SubmitForm({
   identityName,
   isAdmin = false,
   identityEmail,
+  openIssues,
 }: {
   kind: "spark" | "struggle";
   lessons: Lesson[];
@@ -46,11 +55,18 @@ export function SubmitForm({
   /** Organiser mode: author fields stay visible and editable (attribution). */
   isAdmin?: boolean;
   identityEmail?: string | null;
+  /** Open struggles shown as "is it one of these?" when a lesson is picked. */
+  openIssues?: SimilarIssue[];
 }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [result, setResult] = useState<ActionResult<{ id: string; ticketNumber?: string }> | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [selectedLesson, setSelectedLesson] = useState("");
+
+  const similar = (openIssues ?? []).filter(
+    (i) => !selectedLesson || i.lessonId === selectedLesson,
+  );
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -112,7 +128,12 @@ export function SubmitForm({
       </Field>
       <div className="grid sm:grid-cols-2 gap-5">
         <Field label="Lesson">
-          <select name="lesson_id" className={inputClasses} defaultValue="">
+          <select
+            name="lesson_id"
+            className={inputClasses}
+            defaultValue=""
+            onChange={(e) => setSelectedLesson(e.target.value)}
+          >
             <option value="">No specific lesson</option>
             {lessons.map((l) => (
               <option key={l.id} value={l.id}>
@@ -168,6 +189,29 @@ export function SubmitForm({
           >
             <input name="author_email" type="email" className={inputClasses} />
           </Field>
+        </div>
+      )}
+
+      {kind === "struggle" && similar.length > 0 && (
+        <div className="bg-dusk-wash border border-dusk/20 rounded-lg p-4 space-y-2">
+          <p className="text-sm font-medium">Already reported? Join the conversation instead:</p>
+          <ul className="space-y-1">
+            {similar.slice(0, 5).map((i) => (
+              <li key={i.id}>
+                <Link
+                  href={`/tickets/${i.id}`}
+                  className="inline-flex items-center gap-2 text-sm text-dusk-deep hover:underline"
+                >
+                  <span className="font-mono text-xs">{i.ticketNumber}</span>
+                  <span className="truncate">{i.title}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <p className="text-xs text-stone">
+            Open the matching ticket, tap <em>I have this too</em>, and chat there — the organiser
+            sees how many people are stuck, and you&apos;ll be part of that solution.
+          </p>
         </div>
       )}
 

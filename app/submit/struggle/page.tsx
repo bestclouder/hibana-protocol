@@ -1,12 +1,24 @@
 import { createStruggle } from "@/lib/actions";
 import { getIdentity } from "@/lib/auth";
-import { getLessons } from "@/lib/data";
+import { getLessons, getTickets } from "@/lib/data";
 import { SubmitForm } from "@/components/submit-form";
 
 export const dynamic = "force-dynamic";
 
 export default async function SubmitStrugglePage() {
-  const [lessons, identity] = await Promise.all([getLessons(), getIdentity()]);
+  const [lessons, identity, allTickets] = await Promise.all([
+    getLessons(),
+    getIdentity(),
+    getTickets(),
+  ]);
+  const openIssues = allTickets
+    .filter((t) => !["resolved", "closed"].includes(t.status))
+    .map((t) => ({
+      id: t.id,
+      ticketNumber: t.ticket_number,
+      title: t.title,
+      lessonId: t.lesson_id,
+    }));
   return (
     <main className="max-w-2xl mx-auto px-4 sm:px-6 py-10">
       <div className="mb-8">
@@ -19,7 +31,7 @@ export default async function SubmitStrugglePage() {
           be notified by email.
         </p>
       </div>
-      <SubmitForm kind="struggle" lessons={lessons} identityName={identity.name} isAdmin={identity.isAdmin} identityEmail={identity.email} action={createStruggle} />
+      <SubmitForm kind="struggle" lessons={lessons} identityName={identity.name} isAdmin={identity.isAdmin} identityEmail={identity.email} openIssues={openIssues} action={createStruggle} />
     </main>
   );
 }

@@ -43,6 +43,15 @@ export async function createLesson(formData: FormData): Promise<ActionResult> {
       .single();
     if (error) throw new Error(error.message);
 
+    // Every lesson gets a standing discussion thread
+    await supabase.from("threads").insert({
+      space_id: PILOT_SPACE_ID,
+      lesson_id: data.id,
+      title,
+      body: "Open discussion for this lesson — share takeaways, ask questions.",
+      kind: "lesson",
+    });
+
     await writeAudit(supabase, {
       action: "lesson.created",
       target_type: "lesson",
@@ -82,6 +91,13 @@ export async function updateLesson(input: {
       .eq("id", input.id);
     if (error) throw new Error(error.message);
 
+    // Keep the lesson's discussion thread title in sync
+    await supabase
+      .from("threads")
+      .update({ title })
+      .eq("lesson_id", input.id)
+      .eq("kind", "lesson");
+
     await writeAudit(supabase, {
       action: "lesson.updated",
       target_type: "lesson",
@@ -116,6 +132,18 @@ export async function deleteLesson(input: { id: string }): Promise<ActionResult>
       .single();
     if (!lesson) return { ok: false, message: "That lesson no longer exists." };
 
+    // The lesson's own discussion thread goes with it (replies included);
+    // organiser topics that merely reference the lesson are kept and detached
+    const { data: lessonThreads } = await supabase
+      .from("threads")
+      .select("id")
+      .eq("lesson_id", input.id)
+      .eq("kind", "lesson");
+    for (const t of lessonThreads ?? []) {
+      await supabase.from("comments").delete().eq("target_id", t.id);
+      await supabase.from("threads").delete().eq("id", t.id);
+    }
+
     for (const table of [
       "spark_posts",
       "struggle_tickets",
@@ -127,8 +155,7 @@ export async function deleteLesson(input: { id: string }): Promise<ActionResult>
         .from(table)
         .update({ lesson_id: null })
         .eq("lesson_id", input.id);
-      // threads may not exist yet; every other failure must stop the delete
-      if (error && table !== "threads") throw new Error(`${table}: ${error.message}`);
+      if (error) throw new Error(`${table}: ${error.message}`);
     }
     // Child lessons (parent_lesson_id) would block or orphan — detach them too
     await supabase.from("lessons").update({ parent_lesson_id: null }).eq("parent_lesson_id", input.id);
