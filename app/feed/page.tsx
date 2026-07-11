@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getLessons, getReactionCounts, getSpace, getSparks, getTickets } from "@/lib/data";
 import { createClient } from "@/lib/supabase/server";
 import { ShowcaseCard, TicketRow } from "@/components/cards";
+import { ShowcaseRail } from "@/components/showcase-rail";
 import { SparkMark } from "@/components/badges";
 
 export const dynamic = "force-dynamic";
@@ -100,9 +101,6 @@ export default async function FeedPage({
               </Link>
             )}
           </nav>
-          <p className="text-[0.65rem] text-stone mt-2 px-1">
-            Each lesson opens its post and chat.
-          </p>
         </aside>
 
         <div className="space-y-10 min-w-0">
@@ -126,7 +124,7 @@ export default async function FeedPage({
                 </Link>
               </div>
             ) : (
-              <div className="flex gap-4 overflow-x-auto pb-3 snap-x -mx-1 px-1">
+              <ShowcaseRail>
                 {sparks.map((spark) => (
                   <ShowcaseCard
                     key={spark.id}
@@ -136,7 +134,7 @@ export default async function FeedPage({
                     commentCount={commentCounts[spark.id]}
                   />
                 ))}
-              </div>
+              </ShowcaseRail>
             )}
           </section>
 
