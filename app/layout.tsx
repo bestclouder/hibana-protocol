@@ -3,7 +3,8 @@ import { Fraunces, Public_Sans, IBM_Plex_Mono } from "next/font/google";
 import Link from "next/link";
 import { getIdentity } from "@/lib/auth";
 import { signOut } from "@/lib/auth-actions";
-import { getSpace } from "@/lib/data";
+import { getLessons, getSpace } from "@/lib/data";
+import { MobileNav } from "@/components/mobile-nav";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -33,7 +34,11 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [identity, space] = await Promise.all([getIdentity(), getSpace()]);
+  const [identity, space, lessons] = await Promise.all([
+    getIdentity(),
+    getSpace(),
+    getLessons().catch(() => []),
+  ]);
   const nav = [
     { href: "/feed", label: "Feed" },
     { href: "/threads", label: "Threads" },
@@ -47,6 +52,13 @@ export default async function RootLayout({
         <header className="border-b border-sand bg-card/80 backdrop-blur sticky top-0 z-40">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
             <div className="flex items-center gap-3 min-w-0">
+              <MobileNav
+                nav={nav}
+                lessons={lessons.map((l) => ({ id: l.id, title: l.title }))}
+                spaceName={space?.name ?? null}
+                userName={identity.name}
+                isAdmin={identity.isAdmin}
+              />
               <Link href="/feed" className="flex items-baseline gap-2 group shrink-0">
                 <span aria-hidden className="text-ember text-lg leading-none">火花</span>
                 <span className="font-display text-xl font-semibold tracking-tight group-hover:text-ember-deep transition-colors">
@@ -58,14 +70,14 @@ export default async function RootLayout({
               </Link>
               {space && (
                 <span
-                  className="truncate rounded-full border border-gold/30 bg-gold-wash text-gold px-3 py-1 text-xs font-semibold"
+                  className="hidden sm:inline-block truncate rounded-full border border-gold/30 bg-gold-wash text-gold px-3 py-1 text-xs font-semibold"
                   title={space.description ?? space.name}
                 >
                   {space.name}
                 </span>
               )}
             </div>
-            <nav className="flex items-center gap-1 text-sm">
+            <nav className="hidden md:flex items-center gap-1 text-sm">
               {nav.map((item) => (
                 <Link
                   key={item.href}

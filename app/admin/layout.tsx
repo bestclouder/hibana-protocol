@@ -12,7 +12,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             Where is the cohort stuck?
           </h1>
         </div>
-        <nav className="flex gap-1 text-sm">
+        <nav className="flex flex-wrap gap-1 text-sm">
           <Link href="/admin" className="px-3 py-1.5 rounded-md text-stone hover:text-ink hover:bg-sand/60 font-medium transition-colors">
             Overview
           </Link>
